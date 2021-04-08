@@ -12,6 +12,7 @@ import java.math.BigInteger;
 public class DhkeClientDriverTest {
 
     public static void main(String[] args) throws ClientStartException {
+        DhkeClientCertificateUtil.addSslToSystemProperties();
         final DhkeClient client = new DhkeClient(DhkeClientDriverTest::printKeyBytesAndId);
         client.start("localhost");
         client.requestNewKey();

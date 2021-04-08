@@ -4,9 +4,13 @@ import com.gabler.client.Client;
 import com.gabler.client.ClientConfiguration;
 import com.gabler.client.ClientStartException;
 import com.gabler.server.ChatThread;
+import lombok.SneakyThrows;
 
-import java.io.PrintStream;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+import java.io.PrintWriter;
 import java.math.BigInteger;
+import java.net.Socket;
 import java.util.function.BiConsumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -40,9 +44,16 @@ public class DhkeClient extends ClientConfiguration {
      * @throws ClientStartException If the client cannot start
      */
     public void start(String hostName) throws ClientStartException {
-        final Client client = new Client(hostName, DHKE_SERVLET_PORT);
+        final Client client = new Client(DhkeClient::createSslSocket, hostName, DHKE_SERVLET_PORT);
         client.setOperations(this);
         client.startConnection();
+    }
+
+    @SneakyThrows
+    private static Socket createSslSocket(String hostName, int portNumber) {
+        final SSLSocket socket = (SSLSocket)SSLSocketFactory.getDefault().createSocket(hostName, portNumber);
+        socket.startHandshake();
+        return socket;
     }
 
     /**
@@ -137,7 +148,7 @@ public class DhkeClient extends ClientConfiguration {
      * {@inheritDoc}
      */
     @Override
-    public void joinAction(PrintStream printStream) {
+    public void joinAction(PrintWriter printStream) {
         LOGGER.info("DHKE client connected to DHKE Server.");
     }
 }
