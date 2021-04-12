@@ -65,6 +65,14 @@ public class DhkeClient extends ClientConfiguration {
     }
 
     /**
+     * Terminate the client.
+     */
+    public void terminate() {
+        LOGGER.info("Terminating DHKE Client.");
+        client.terminate();
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
@@ -73,6 +81,7 @@ public class DhkeClient extends ClientConfiguration {
 
         if (message.equalsIgnoreCase("E")) {
             LOGGER.severe("Server sent error response code.");
+            keyAndIdConsumer.accept(null, null);
             dhkeState = null;
             return null;
         }

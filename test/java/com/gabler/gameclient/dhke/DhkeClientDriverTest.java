@@ -1,6 +1,7 @@
 package com.gabler.gameclient.dhke;
 
 import com.gabler.client.ClientStartException;
+import com.gabler.gameclient.ClientCertificateUtil;
 
 import java.math.BigInteger;
 
@@ -12,7 +13,7 @@ import java.math.BigInteger;
 public class DhkeClientDriverTest {
 
     public static void main(String[] args) throws ClientStartException {
-        DhkeClientCertificateUtil.addSslToSystemProperties();
+        ClientCertificateUtil.addSslToSystemProperties();
         final DhkeClient client = new DhkeClient(DhkeClientDriverTest::printKeyBytesAndId);
         client.start("localhost");
         client.requestNewKey();

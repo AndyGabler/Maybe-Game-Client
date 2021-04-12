@@ -1,4 +1,4 @@
-package com.gabler.gameclient.dhke;
+package com.gabler.gameclient;
 
 import lombok.SneakyThrows;
 
@@ -7,26 +7,26 @@ import java.net.URL;
 import java.util.Scanner;
 
 /**
- * Setup configuration for a DHKE socket.
+ * Setup configuration for a socket.
  *
  * @author Andy Gabler
  */
-public class DhkeClientCertificateUtil {
+public class ClientCertificateUtil {
 
     /**
      * Add SSL system properties.
      */
     @SneakyThrows
     public static void addSslToSystemProperties() {
-        final URL trustStoreUrl = DhkeClientCertificateUtil.class.getClassLoader().getResource("gamesslstore-server.store");
+        final URL trustStoreUrl = ClientCertificateUtil.class.getClassLoader().getResource("gamesslstore-server.store");
         final String sslTrustPath = trustStoreUrl.getFile();
 
         System.setProperty("javax.net.ssl.trustStore", sslTrustPath);
 
-        final URL keyStoreUrl = DhkeClientCertificateUtil.class.getClassLoader().getResource("gamesslstore-client.store");
+        final URL keyStoreUrl = ClientCertificateUtil.class.getClassLoader().getResource("gamesslstore-client.store");
         final String sslStorePath = keyStoreUrl.getFile();
 
-        final URL sslClientPasswordResource = DhkeClientCertificateUtil.class.getClassLoader().getResource("ssl-client-password.txt");
+        final URL sslClientPasswordResource = ClientCertificateUtil.class.getClassLoader().getResource("ssl-client-password.txt");
         final String sslClientPassword = new Scanner(new File(sslClientPasswordResource.getFile())).nextLine();
 
         System.setProperty("javax.net.ssl.keyStore", sslStorePath);
