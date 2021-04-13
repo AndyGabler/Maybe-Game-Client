@@ -58,10 +58,11 @@ public class DhkeState {
         } else {
             final BigInteger sharedSecret = nextInteger.modPow(privateKey, modularSpace);
             final byte[] secretBytes = sharedSecret.toByteArray();
-            key = new byte[secretBytes.length - 1];
 
+            key = new byte[16];
             for (int index = 0; index < key.length; index++) {
-                key[index] = secretBytes[index + 1];
+                // Ensure if key is longer than 16 bytes, we actually record 16, but 16 if it's unsigned
+                key[index] = secretBytes[index + (secretBytes.length - 16)];
             }
 
             return null;

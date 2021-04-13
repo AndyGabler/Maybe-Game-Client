@@ -33,6 +33,7 @@ public class GameClient implements IUdpClientConfiguration {
     private volatile boolean keyReceived = false;
     private volatile boolean authenticated = false;
     private volatile String sessionSecret;
+    private volatile String sessionId;
 
     private final DhkeClient keyClient;
     private final UdpClient client;
@@ -64,8 +65,8 @@ public class GameClient implements IUdpClientConfiguration {
         keyClient = new DhkeClient(this::setKey);
         client = new UdpClient(aHostname, GAME_SERVER_PORT);
         client.setConfiguration(this);
-        engine = new ClientEngine(aRenderer);
-        authenticationClient = new AuthenticationClient(this::setSessionSecret);
+        engine = new ClientEngine(this::getSessionId, aRenderer);
+        authenticationClient = new AuthenticationClient(this::setSessionInfo);
     }
 
     /**
@@ -86,13 +87,24 @@ public class GameClient implements IUdpClientConfiguration {
      * Set the session secret so that the session can be referenced with the server.
      *
      * @param aSessionSecret The session reference
+     * @param aSessionId The ID of the session
      */
-    private void setSessionSecret(String aSessionSecret) {
+    private void setSessionInfo(String aSessionSecret, String aSessionId) {
         // Logging this is okay since this is client-side
         LOGGER.info("Session started with server: " + aSessionSecret);
 
         authenticated = true;
         sessionSecret = aSessionSecret;
+        sessionId = aSessionId;
+    }
+
+    /**
+     * Get public identifier for the session with the server. This is non-secret and the server may broadcast this.
+     *
+     * @return The session id
+     */
+    public synchronized String getSessionId() {
+        return sessionId;
     }
 
     /**
@@ -145,7 +157,7 @@ public class GameClient implements IUdpClientConfiguration {
             gameState = byteToGameStateTransformer.apply(bytes);
         } catch (Exception exception) {
             /*
-             * This probably did not come from a client designed for this server.
+             * This is extremely abnormal.
              */
             LOGGER.log(Level.SEVERE, "Could not serialize server bytes message to a GameState.", exception);
             return;

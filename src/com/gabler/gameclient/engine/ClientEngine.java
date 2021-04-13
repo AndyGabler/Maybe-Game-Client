@@ -2,6 +2,8 @@ package com.gabler.gameclient.engine;
 
 import com.gabler.game.model.server.GameState;
 
+import java.util.function.Supplier;
+
 /**
  * Engine for the client. Hook for all components that create some kind of event (IE server messages or ticks).
  *
@@ -11,14 +13,17 @@ public class ClientEngine {
 
     // TODO ticks and sequence number init
 
+    private final Supplier<String> sessionIdResolver;
     private final IGameStateRenderer renderer;
 
     /**
      * Instantiate engine for the client.
      *
-     * @param aRenderer
+     * @param aSessionIdResolver Supplier for session IDs
+     * @param aRenderer The render that renders game states
      */
-    public ClientEngine(IGameStateRenderer aRenderer) {
+    public ClientEngine(Supplier<String> aSessionIdResolver, IGameStateRenderer aRenderer) {
+        sessionIdResolver = aSessionIdResolver;
         renderer = aRenderer;
     }
 
