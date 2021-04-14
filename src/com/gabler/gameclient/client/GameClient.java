@@ -1,9 +1,11 @@
 package com.gabler.gameclient.client;
 
 import com.gabler.client.ClientStartException;
+import com.gabler.game.model.client.ClientRequest;
 import com.gabler.gameclient.auth.AuthenticationClient;
 import com.gabler.gameclient.dhke.DhkeClient;
 import com.gabler.gameclient.engine.ClientEngine;
+import com.gabler.gameclient.engine.IClientInputSupplier;
 import com.gabler.gameclient.engine.IGameStateRenderer;
 import com.gabler.game.model.server.GameState;
 import com.gabler.udpmanager.client.IUdpClientConfiguration;
@@ -11,6 +13,7 @@ import com.gabler.udpmanager.client.UdpClient;
 import lombok.SneakyThrows;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -27,6 +30,7 @@ public class GameClient implements IUdpClientConfiguration {
     private static final int GAME_SERVER_PORT = 13350;
 
     private final Function<byte[], GameState> byteToGameStateTransformer;
+    private final Function<Serializable, byte[]> objectToBytesTransformer;
     private final String hostname;
 
     private volatile long latestRecordedSequenceNumber;
@@ -45,27 +49,31 @@ public class GameClient implements IUdpClientConfiguration {
      *
      * @param aHostname Hostname of the game server
      * @param aRenderer Renderer the engine uses
+     * @param aInputSupplier Supplier for user inputs
      */
-    public GameClient(String aHostname, IGameStateRenderer aRenderer) {
-        this(new BytesToObjectTransformer<>(), aHostname, aRenderer);
+    public GameClient(String aHostname, IGameStateRenderer aRenderer, IClientInputSupplier aInputSupplier) {
+        this(new BytesToObjectTransformer<>(), new ObjectToBytesTransformer(), aHostname, aRenderer, aInputSupplier);
     }
 
     /**
      * Instantiate a game client.
      *
      * @param aByteToGameStateTransformer Transformer for turning a bytes message to a {@link GameState}
+     * @param anObjectToBytesTransformer Transformer for turning an object to a byte array
      * @param aHostname Hostname of the game server
      * @param aRenderer Renderer the engine uses
+     * @param aInputSupplier Supplier for user inputs
      */
     @SneakyThrows
-    public GameClient(Function<byte[], GameState> aByteToGameStateTransformer, String aHostname, IGameStateRenderer aRenderer) {
+    public GameClient(Function<byte[], GameState> aByteToGameStateTransformer, Function<Serializable, byte[]> anObjectToBytesTransformer, String aHostname, IGameStateRenderer aRenderer, IClientInputSupplier aInputSupplier) {
         byteToGameStateTransformer = aByteToGameStateTransformer;
+        objectToBytesTransformer = anObjectToBytesTransformer;
         hostname = aHostname;
 
         keyClient = new DhkeClient(this::setKey);
         client = new UdpClient(aHostname, GAME_SERVER_PORT);
         client.setConfiguration(this);
-        engine = new ClientEngine(this::getSessionId, aRenderer);
+        engine = new ClientEngine(this, aRenderer, aInputSupplier);
         authenticationClient = new AuthenticationClient(this::setSessionInfo);
     }
 
@@ -108,6 +116,29 @@ public class GameClient implements IUdpClientConfiguration {
     }
 
     /**
+     * Get secret for the session with the server.
+     *
+     * @return The session secret
+     */
+    public synchronized String getSessionSecret() {
+        return sessionSecret;
+    }
+
+    /**
+     * Hook to send a message to the server.
+     *
+     * @param request The client request
+     */
+    public void sendClientRequest(ClientRequest request) {
+        try {
+            final byte[] bytes = objectToBytesTransformer.apply(request);
+            client.sendMessageToServer(bytes);
+        } catch (Exception exception) {
+            LOGGER.log(Level.SEVERE, "Failed to send input to server.", exception);
+        }
+    }
+
+    /**
      * Start the game client.
      *
      * @param username Username
@@ -142,6 +173,7 @@ public class GameClient implements IUdpClientConfiguration {
         }
 
         // Okay, we're good to go live.
+        engine.start();
         client.start();
         client.sendMessageToServer("CONN"); // TODO this can fail, add a mechanism to actually ensure the server notices or timeout
     }

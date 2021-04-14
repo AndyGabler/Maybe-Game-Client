@@ -4,10 +4,13 @@ import com.gabler.client.ClientStartException;
 import com.gabler.gameclient.ClientCertificateUtil;
 import com.gabler.gameclient.client.GameClient;
 import com.gabler.gameclient.client.GameClientStartException;
+import com.gabler.gameclient.engine.IClientInputSupplier;
 import com.gabler.gameclient.engine.IGameStateRenderer;
+import com.gabler.gameclient.ui.GameWindow;
 import com.google.gson.Gson;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -39,17 +42,21 @@ public class AppStart {
             renderMethod = renderMethods.get(0);
         }
 
-        IGameStateRenderer renderer = null;
+        IGameStateRenderer renderer;
+        IClientInputSupplier inputSupplier;
         if (renderMethod.equalsIgnoreCase("UI")) {
-            // TODO
+            final GameWindow window = new GameWindow();
+            renderer = window;
+            inputSupplier = window;
         } else if (renderMethod.equalsIgnoreCase("TXT")) {
             renderer = (state) -> System.out.println(new Gson().toJson(state));
+            inputSupplier = ArrayList::new;
         } else {
             throw new IllegalArgumentException("No renderer for render option " + renderMethod);
         }
 
         ClientCertificateUtil.addSslToSystemProperties();
-        final GameClient client = new GameClient(hostname, renderer);
+        final GameClient client = new GameClient(hostname, renderer, inputSupplier);
         client.start(username, password);
     }
 }
