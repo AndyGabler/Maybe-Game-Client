@@ -10,9 +10,14 @@ import com.gabler.game.model.server.GameState;
 public interface IGameStateRenderer {
 
     /**
-     * Render a game-state in a user-readable way.
+     * Set the game state to render.
      *
      * @param toRender The game state to render
      */
-    void render(GameState toRender);
+    void setGameStateToRender(GameState toRender);
+
+    /**
+     * Render a game-state in a user-readable way.
+     */
+    void render();
 }

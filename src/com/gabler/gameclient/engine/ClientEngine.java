@@ -7,6 +7,7 @@ import com.gabler.gameclient.client.GameClient;
 import javax.swing.Timer;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.List;
 
 /**
  * Engine for the client. Hook for all components that create some kind of event (IE server messages or ticks).
@@ -20,10 +21,11 @@ public class ClientEngine implements ActionListener {
      */
     private static final double JAVA_TIMER_30FPS_DELAY = 30;
 
-    private volatile int sequenceNumber;
+    private int sequenceNumber;
     private final GameClient client;
     private final IGameStateRenderer renderer;
     private final IClientInputSupplier inputSupplier;
+    private final IRendererPresetup setupOperations;
     private final Timer timer;
 
     /**
@@ -32,11 +34,14 @@ public class ClientEngine implements ActionListener {
      * @param aClient The client the engine is connected to
      * @param aRenderer The render that renders game states
      * @param aInputSupplier Supplier for user inputs
+     * @param aSetupOperations Operations to setup the renderer
      */
-    public ClientEngine(GameClient aClient, IGameStateRenderer aRenderer, IClientInputSupplier aInputSupplier) {
+    public ClientEngine(GameClient aClient, IGameStateRenderer aRenderer, IClientInputSupplier aInputSupplier, IRendererPresetup aSetupOperations) {
         client = aClient;
         renderer = aRenderer;
         inputSupplier = aInputSupplier;
+        setupOperations = aSetupOperations;
+        sequenceNumber = 0;
         timer = makeTimer(30, this); // TODO non-static or different frame rate?
     }
 
@@ -54,16 +59,19 @@ public class ClientEngine implements ActionListener {
     /**
      * Perform an engine tick.
      */
-    public synchronized void tick() {
-        System.out.println("Engine tick");
-        sequenceNumber = sequenceNumber + 1;
+    private void tick() {
 
-        final ClientRequest request = new ClientRequest();
-        request.setSessionToken(client.getSessionSecret());
-        request.setSequenceNumber(sequenceNumber);
-        request.setInputCodes(inputSupplier.getAndClearInputs());
+        final List<String> inputCodes = inputSupplier.getAndClearInputs();
+        if (inputCodes.size() > 0) {
+            sequenceNumber = sequenceNumber + 1;
 
-        client.sendClientRequest(request);
+            final ClientRequest request = new ClientRequest();
+            request.setSessionToken(client.getSessionSecret());
+            request.setSequenceNumber(sequenceNumber);
+            request.setInputCodes(inputCodes);
+
+            client.sendClientRequest(request);
+        }
     }
 
     /**
@@ -71,8 +79,8 @@ public class ClientEngine implements ActionListener {
      *
      * @param gameState The game state
      */
-    public synchronized void takeGameState(GameState gameState) {
-        renderer.render(gameState);
+    public void takeGameState(GameState gameState) {
+        renderer.setGameStateToRender(gameState);
     }
 
     /**
@@ -80,6 +88,7 @@ public class ClientEngine implements ActionListener {
      */
     public void start() {
         timer.start();
+        setupOperations.setupBeforeRender();
     }
 
     /**
@@ -111,5 +120,6 @@ public class ClientEngine implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent event) {
         tick();
+        renderer.render();
     }
 }

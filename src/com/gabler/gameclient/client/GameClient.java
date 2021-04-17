@@ -8,6 +8,7 @@ import com.gabler.gameclient.engine.ClientEngine;
 import com.gabler.gameclient.engine.IClientInputSupplier;
 import com.gabler.gameclient.engine.IGameStateRenderer;
 import com.gabler.game.model.server.GameState;
+import com.gabler.gameclient.engine.IRendererPresetup;
 import com.gabler.udpmanager.client.IUdpClientConfiguration;
 import com.gabler.udpmanager.client.UdpClient;
 import lombok.SneakyThrows;
@@ -50,9 +51,22 @@ public class GameClient implements IUdpClientConfiguration {
      * @param aHostname Hostname of the game server
      * @param aRenderer Renderer the engine uses
      * @param aInputSupplier Supplier for user inputs
+     * @param aSetupOperations Operations to setup the renderer
      */
-    public GameClient(String aHostname, IGameStateRenderer aRenderer, IClientInputSupplier aInputSupplier) {
-        this(new BytesToObjectTransformer<>(), new ObjectToBytesTransformer(), aHostname, aRenderer, aInputSupplier);
+    public GameClient(
+        String aHostname,
+        IGameStateRenderer aRenderer,
+        IClientInputSupplier aInputSupplier,
+        IRendererPresetup aSetupOperations
+    ) {
+        this(
+            new BytesToObjectTransformer<>(),
+            new ObjectToBytesTransformer(),
+            aHostname,
+            aRenderer,
+            aInputSupplier,
+            aSetupOperations
+        );
     }
 
     /**
@@ -63,9 +77,17 @@ public class GameClient implements IUdpClientConfiguration {
      * @param aHostname Hostname of the game server
      * @param aRenderer Renderer the engine uses
      * @param aInputSupplier Supplier for user inputs
+     * @param aSetupOperations Operations to setup the renderer
      */
     @SneakyThrows
-    public GameClient(Function<byte[], GameState> aByteToGameStateTransformer, Function<Serializable, byte[]> anObjectToBytesTransformer, String aHostname, IGameStateRenderer aRenderer, IClientInputSupplier aInputSupplier) {
+    public GameClient(
+        Function<byte[], GameState> aByteToGameStateTransformer,
+        Function<Serializable, byte[]> anObjectToBytesTransformer,
+        String aHostname,
+        IGameStateRenderer aRenderer,
+        IClientInputSupplier aInputSupplier,
+        IRendererPresetup aSetupOperations
+    ) {
         byteToGameStateTransformer = aByteToGameStateTransformer;
         objectToBytesTransformer = anObjectToBytesTransformer;
         hostname = aHostname;
@@ -73,7 +95,7 @@ public class GameClient implements IUdpClientConfiguration {
         keyClient = new DhkeClient(this::setKey);
         client = new UdpClient(aHostname, GAME_SERVER_PORT);
         client.setConfiguration(this);
-        engine = new ClientEngine(this, aRenderer, aInputSupplier);
+        engine = new ClientEngine(this, aRenderer, aInputSupplier, aSetupOperations);
         authenticationClient = new AuthenticationClient(this::setSessionInfo);
     }
 
@@ -111,7 +133,7 @@ public class GameClient implements IUdpClientConfiguration {
      *
      * @return The session id
      */
-    public synchronized String getSessionId() {
+    public String getSessionId() {
         return sessionId;
     }
 
@@ -120,7 +142,7 @@ public class GameClient implements IUdpClientConfiguration {
      *
      * @return The session secret
      */
-    public synchronized String getSessionSecret() {
+    public String getSessionSecret() {
         return sessionSecret;
     }
 
@@ -148,10 +170,12 @@ public class GameClient implements IUdpClientConfiguration {
      * @throws IOException If error in sending preliminary message to server
      */
     public void start(String username, String password) throws ClientStartException, GameClientStartException, IOException {
+        LOGGER.info("Client starting. Requesting authentication.");
         // First up on the docket, let's authenticate with the server
         authenticationClient.start(hostname);
         authenticationClient.requestAuth(username, password);
 
+        LOGGER.info("Authentication requested. Awaiting server response.");
         // TODO timeout mechanism
         while (!authenticated) {
             Thread.onSpinWait();
@@ -163,15 +187,21 @@ public class GameClient implements IUdpClientConfiguration {
             throw new GameClientStartException("Authentication failed.");
         }
 
+        LOGGER.info("Successfully authenticated with session UUID of " + sessionId);
+
+        LOGGER.info("Attempting to get UDP encryption key from server.");
         // Okay, we have a session. Let's see to it that we have a shared secret with the game server.
         keyClient.start(hostname);
         keyClient.requestNewKey();
 
+        LOGGER.info("Key exchange in process. Awaiting completion.");
         // TODO timeout mechanism
         while (!keyReceived) {
             Thread.onSpinWait();
         }
+        keyClient.terminate();
 
+        LOGGER.info("All presetup steps completed. Starting client engine and UDP client.");
         // Okay, we're good to go live.
         engine.start();
         client.start();
