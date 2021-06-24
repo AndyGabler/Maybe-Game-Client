@@ -17,6 +17,13 @@ public interface IGameStateRenderer {
     void setGameStateToRender(GameState toRender);
 
     /**
+     * Set the session associated to the player whose perspective is being followed.
+     *
+     * @param sessionId The session ID
+     */
+    void setSessionId(String sessionId);
+
+    /**
      * Render a game-state in a user-readable way.
      */
     void render();

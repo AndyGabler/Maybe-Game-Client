@@ -60,6 +60,9 @@ public class AppStart {
                 }
 
                 @Override
+                public void setSessionId(String sessionId) {}
+
+                @Override
                 public void render() {}
             };
             inputSupplier = ArrayList::new;

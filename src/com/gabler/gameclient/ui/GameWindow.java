@@ -30,6 +30,7 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
     @Getter
     @Setter
     private volatile int height;
+    private volatile String sessionId;
     private final JFrame frame;
     private volatile GameState latestGameState = null;
     private final ConcurrentInputManager inputManager;
@@ -66,13 +67,24 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
         // TODO actual render
         final GameState state = latestGameState;
         if (state == null) {
-            graphics.setColor(Color.BLACK);
-        } else if (state.getVersion() % 2 == 0) {
             graphics.setColor(Color.BLUE);
-        } else {
-            graphics.setColor(Color.RED);
+            graphics.fillRect(0, 0, width, height);
+            return;
         }
+
+        graphics.setColor(Color.BLACK);
         graphics.fillRect(0, 0, width, height);
+
+        state.getPlayers().forEach(player -> {
+            if (player.getSessionId().equalsIgnoreCase(sessionId)) {
+                graphics.setColor(Color.RED);
+            } else {
+                graphics.setColor(Color.WHITE);
+            }
+
+            // TODO, remember, Y must be flipped around an axis
+            graphics.fillRect((int) player.getX() - 15, (int)player.getY() - 15, 30, 30);
+        });
     }
 
     /**
@@ -82,6 +94,14 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
     public void setGameStateToRender(GameState toRender) {
         // Do not repaint off of the word of the server thread. Only a Java AWT thread can update this.
         latestGameState = toRender;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setSessionId(String sessionId) {
+        this.sessionId = sessionId;
     }
 
     /**

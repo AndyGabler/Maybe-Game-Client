@@ -7,6 +7,7 @@ import com.gabler.gameclient.client.GameClient;
 import javax.swing.Timer;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -27,6 +28,10 @@ public class ClientEngine implements ActionListener {
     private final IClientInputSupplier inputSupplier;
     private final IRendererPresetup setupOperations;
     private final Timer timer;
+
+    // Setter for whether or not this client has been acked by the server
+    private volatile GameState latestGameState = null;
+    private volatile boolean serverAckedClient = false;
 
     /**
      * Instantiate engine for the client.
@@ -61,6 +66,28 @@ public class ClientEngine implements ActionListener {
      */
     private void tick() {
 
+        // Until server acks client, keep sending requests
+        if (
+            !serverAckedClient && (
+            latestGameState == null ||
+            latestGameState.getPlayers().stream().anyMatch(player -> player.getSessionId().equalsIgnoreCase(client.getSessionId()))
+        )) {
+            // Clear queued inputs
+            sequenceNumber = sequenceNumber + 1;
+            inputSupplier.getAndClearInputs();
+
+            final ArrayList<String> inputCodes = new ArrayList<>();
+            inputCodes.add("JOINGAME");
+
+            final ClientRequest request = new ClientRequest();
+            request.setSessionToken(client.getSessionSecret());
+            request.setSequenceNumber(sequenceNumber);
+            request.setInputCodes(inputCodes);
+
+            client.sendClientRequest(request);
+            return;
+        }
+
         final List<String> inputCodes = inputSupplier.getAndClearInputs();
         if (inputCodes.size() > 0) {
             sequenceNumber = sequenceNumber + 1;
@@ -80,6 +107,14 @@ public class ClientEngine implements ActionListener {
      * @param gameState The game state
      */
     public void takeGameState(GameState gameState) {
+        latestGameState = gameState;
+
+        // TODO mechanism for handling server rejecting the client
+        if (!serverAckedClient &&
+            gameState.getPlayers().stream().anyMatch(player -> player.getSessionId().equals(client.getSessionId()))) {
+            serverAckedClient = true;
+        }
+
         renderer.setGameStateToRender(gameState);
     }
 
@@ -89,6 +124,7 @@ public class ClientEngine implements ActionListener {
     public void start() {
         timer.start();
         setupOperations.setupBeforeRender();
+        renderer.setSessionId(client.getSessionId());
     }
 
     /**

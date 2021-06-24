@@ -27,6 +27,15 @@ public class StaticKeyboardInputMapper implements IKeyBoardInputMapper {
                     case KeyEvent.VK_W:
                         inputCode = "THRUST";
                         break;
+                    case KeyEvent.VK_S:
+                        inputCode = "RTHRUST";
+                        break;
+                    case KeyEvent.VK_A:
+                        inputCode = "LROTATE";
+                        break;
+                    case KeyEvent.VK_D:
+                        inputCode = "RROTATE";
+                        break;
                 }
                 break;
         }
