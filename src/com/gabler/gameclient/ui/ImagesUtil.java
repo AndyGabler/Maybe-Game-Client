@@ -38,7 +38,9 @@ public class ImagesUtil {
 
         try {
             image = ImageIO.read(new File(filePath));
-        } catch (Exception problem) {}
+        } catch (Exception problem) {
+            throw new RuntimeException(problem);
+        }
 
         return image;
     }
