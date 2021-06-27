@@ -40,7 +40,7 @@ public class KeyBoardListener implements KeyListener {
      */
     @Override
     public void keyTyped(KeyEvent event) {
-        handleKeyPress(KeyBoardPressType.TYPED, event.getKeyCode());
+        handleKeyPress(KeyBoardPressType.TYPED, event.getKeyLocation(), event.getKeyCode());
     }
 
     /**
@@ -48,7 +48,7 @@ public class KeyBoardListener implements KeyListener {
      */
     @Override
     public void keyPressed(KeyEvent event) {
-        handleKeyPress(KeyBoardPressType.PRESSED, event.getKeyCode());
+        handleKeyPress(KeyBoardPressType.PRESSED, event.getKeyLocation(), event.getKeyCode());
     }
 
     /**
@@ -56,17 +56,18 @@ public class KeyBoardListener implements KeyListener {
      */
     @Override
     public void keyReleased(KeyEvent event) {
-        handleKeyPress(KeyBoardPressType.RELEASED, event.getKeyCode());
+        handleKeyPress(KeyBoardPressType.RELEASED, event.getKeyLocation(), event.getKeyCode());
     }
 
     /**
      * Handle a key event.
      *
      * @param eventType The event
+     * @param locationCode Location code of the key-board press
      * @param keyCode The key code
      */
-    private void handleKeyPress(KeyBoardPressType eventType, int keyCode) {
-        final String inputCode = inputMapper.mapInput(eventType, keyCode);
+    private void handleKeyPress(KeyBoardPressType eventType, int locationCode, int keyCode) {
+        final String inputCode = inputMapper.mapInput(eventType, KeyboardPressLocation.getLocationByCode(locationCode), keyCode);
         if (inputCode != null) {
             window.addInput(inputCode);
         }

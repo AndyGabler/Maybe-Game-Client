@@ -2,12 +2,12 @@ package com.gabler.gameclient.ui;
 
 import com.gabler.game.model.server.BoundingBoxBorder;
 import com.gabler.game.model.server.GameState;
-import com.gabler.game.model.server.IBorder;
 import com.gabler.game.model.server.Player;
 import com.gabler.gameclient.engine.IClientInputSupplier;
 import com.gabler.gameclient.engine.IGameStateRenderer;
 import com.gabler.gameclient.engine.IRendererPresetup;
 import com.gabler.gameclient.ui.keyboard.KeyBoardListener;
+import com.gabler.gameclient.ui.render.player.PlayerAnimationController;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -16,7 +16,11 @@ import javax.swing.JPanel;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Image;
+import java.awt.Graphics2D;
 import java.awt.Graphics;
+import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -41,9 +45,10 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
     private final ConcurrentInputManager inputManager;
 
     private final Image background;
-    private static final double BACKGROUND_WIDTH = 5500;
-    private static final double BACKGROUND_HEIGHT = 3310;
-    private static final double BACKGROUND_OFFSET = 30;
+    private static final int PLAYER_SIZE = 64;
+
+    private PlayerAnimationController mainPlayerAnimationController = null;
+    private List<PlayerAnimationController> playerAnimationControllers = new ArrayList<>();
 
     /**
      * Instantiate the graphical user interface for a game.
@@ -76,15 +81,19 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
      */
     public void paintComponent(Graphics graphics) {
 
+        // Check if the game state is loaded in (that is, has the server acked us, if not, blue screen)
         final GameState state = latestGameState;
         if (state == null) {
             graphics.setColor(Color.BLUE);
             graphics.fillRect(0, 0, width, height);
             return;
         }
-        graphics.setColor(Color.CYAN);
+
+        // Put an obnoxious color in the background so its obvious if render has gone wrong or missed a spot
+        graphics.setColor(Color.MAGENTA);
         graphics.fillRect(0, 0, width, height);
 
+        // Precompute some variables like current player to reduce operation time for complex operations
         final Optional<Player> currentPlayerOpt = state.getPlayers().stream().filter(player1 -> player1.getSessionId().equals(sessionId)).findFirst();
         Player player = null;
         long playerX = 0;
@@ -99,6 +108,7 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
         }
         long transformedPlayerY = maxPlayerY - playerY;
 
+        // Draw the background
         double backgroundWidth = (double)maxPlayerX + (double)width * 2;
         double backgroundHeight = (double)maxPlayerY + (double)height * 2;
         int backGroundX = (int)(-playerX - width);
@@ -108,20 +118,57 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
         final Player currentPlayer = player;
         final long finalPlayerX = playerX;
         final long finalPlayerY = playerY;
+
+        // Render players
         state.getPlayers().forEach(playerToRender -> {
             if (playerToRender == currentPlayer) {
-                graphics.setColor(Color.RED);
-                graphics.fillRect(width / 2 - 12, height / 2 - 12, 24, 24);
+                if (mainPlayerAnimationController == null) {
+                    mainPlayerAnimationController = new PlayerAnimationController(playerToRender);
+                }
+
+                final BufferedImage sprite = mainPlayerAnimationController.nextSprite(state, playerToRender);
+
+                AffineTransform transform = new AffineTransform();
+                transform.translate(width / 2, height / 2);
+                transform.rotate((playerToRender.getAngle() * -1) + Math.PI / 2);
+                transform.translate(-32, -32);
+
+                ((Graphics2D)graphics).drawImage(sprite, transform, this);
             } else {
-                graphics.setColor(Color.WHITE);
+                final BufferedImage sprite = getOrCreateAnimationControllerForPlayer(playerToRender).nextSprite(state, playerToRender);
+
                 int xOffset = (int)(playerToRender.getX() - finalPlayerX);
                 int yOffset = (int)(playerToRender.getY() - finalPlayerY);
-                graphics.fillRect(width / 2 - 12 + xOffset, height / 2 - 12 - yOffset, 24, 24);
+
+                AffineTransform transform = new AffineTransform();
+                transform.translate(width / 2 + xOffset, height / 2 - yOffset);
+                transform.rotate((playerToRender.getAngle() * -1) + Math.PI / 2);
+                transform.translate(-32, -32);
+
+                ((Graphics2D)graphics).drawImage(sprite, transform, this);
             }
         });
 
         graphics.setColor(Color.GREEN);
         graphics.drawRect((int) (playerX * -1) + (width / 2), (int) (playerY - maxPlayerY) + (height / 2), (int)maxPlayerX, (int)maxPlayerY);
+    }
+
+    /**
+     * Get or create animation controller for a player that is not the client player.
+     *
+     * @param player The player
+     * @return The player's animation controller, whether newly created or old
+     */
+    private PlayerAnimationController getOrCreateAnimationControllerForPlayer(Player player) {
+        return playerAnimationControllers
+            .stream()
+            .filter(controller -> controller.checkIfObjectIsAnimatedEntity(player))
+            .findFirst()
+            .orElseGet(() -> {
+                final PlayerAnimationController newController = new PlayerAnimationController(player);
+                playerAnimationControllers.add(newController);
+                return newController;
+            });
     }
 
     /**

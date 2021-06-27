@@ -23,6 +23,8 @@ public class Player implements Serializable {
     private long speed = 0;
     private long acceleration = 0;
 
+    private boolean boosting = false;
+
     private double angle;
     private double rotationalVelocity = 0;
 }
