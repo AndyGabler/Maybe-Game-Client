@@ -44,7 +44,7 @@ test {
     useJUnitPlatform()
 }
 
-mainClassName = 'com.gabler.gameclient.app.AppStart'
+mainClassName = 'com.andronikus.gameclient.app.AppStart'
 
 applicationName = 'Game Client'
 version = "0.1.0"
