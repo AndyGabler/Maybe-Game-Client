@@ -46,4 +46,14 @@ public class PlayerSpriteSheet extends SpriteSheet {
     public BufferedImage getBoostingSprite(int animationState) {
         return getTile(2, animationState);
     }
+
+    /**
+     * Get sprite for the dead state of the player.
+     *
+     * @param animationState Animation state, ranging from 0-9
+     * @return Sprite on the grid for the player
+     */
+    public BufferedImage getDeathSprite(int animationState) {
+        return getTile(3, animationState);
+    }
 }

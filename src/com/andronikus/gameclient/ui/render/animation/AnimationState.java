@@ -38,6 +38,9 @@ public class AnimationState<ANIMATION_OF_TYPE, SPRITE_SHEET_TYPE extends SpriteS
     // Ticks until state is reset, maintained by additions to the frames
     private long frameResetTickCount = 0;
 
+    // Whether or not a frame has been added to the state that declares this as the last frame to be rendered
+    private boolean finalFrameAdded = false;
+
     /**
      * Instantiate a state in an animation.
      *
@@ -79,6 +82,11 @@ public class AnimationState<ANIMATION_OF_TYPE, SPRITE_SHEET_TYPE extends SpriteS
      */
     public BufferedImage nextSprite() {
         long frameIndex = ticksOnState % frameResetTickCount;
+
+        if (finalFrameAdded) {
+            frameIndex = ticksOnState;
+        }
+
         long tickCounter = 0;
 
         Pair<Long, BiFunction<SPRITE_SHEET_TYPE, Integer, BufferedImage>> activeFrame = null;
@@ -91,7 +99,9 @@ public class AnimationState<ANIMATION_OF_TYPE, SPRITE_SHEET_TYPE extends SpriteS
                 frameNumber++;
             }
 
-            tickCounter += animationFrame.getFirst();
+            if (animationFrame.getFirst() != null) {
+                tickCounter += animationFrame.getFirst();
+            }
         }
 
         ticksOnState++;
@@ -109,9 +119,17 @@ public class AnimationState<ANIMATION_OF_TYPE, SPRITE_SHEET_TYPE extends SpriteS
      * @param spriteCallback Function that takes a sprite sheet and an integer and gives a Sprite
      * @return Self so that this can be called in a builder-like fashion
      */
-    public AnimationState<ANIMATION_OF_TYPE, SPRITE_SHEET_TYPE> addFrame(long tickCount, BiFunction<SPRITE_SHEET_TYPE, Integer, BufferedImage> spriteCallback) {
+    public AnimationState<ANIMATION_OF_TYPE, SPRITE_SHEET_TYPE> addFrame(Long tickCount, BiFunction<SPRITE_SHEET_TYPE, Integer, BufferedImage> spriteCallback) {
+        if (finalFrameAdded) {
+            throw new IllegalStateException("Animation state already has a final frame. Cannot add another frame.");
+        }
+
         this.animationFrames.add(new Pair<>(tickCount, spriteCallback));
-        frameResetTickCount += tickCount;
+        if (tickCount != null) {
+            frameResetTickCount += tickCount;
+        } else {
+            finalFrameAdded = true;
+        }
         return this;
     }
 

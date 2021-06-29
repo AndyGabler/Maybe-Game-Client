@@ -27,4 +27,8 @@ public class Player implements Serializable {
 
     private double angle;
     private double rotationalVelocity = 0;
+
+    private int health;
+    private int shieldCount;
+    private boolean dead;
 }

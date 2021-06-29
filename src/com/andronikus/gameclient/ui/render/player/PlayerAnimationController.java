@@ -33,32 +33,47 @@ public class PlayerAnimationController extends AnimationController<Player, Playe
         final AnimationState<Player, PlayerSpriteSheet> idleState = new AnimationState<>(this);
 
         idleState
-            .addFrame(12, PlayerSpriteSheet::getIdleSprite)
-            .addFrame(12, PlayerSpriteSheet::getIdleSprite)
-            .addFrame(12, PlayerSpriteSheet::getIdleSprite)
-            .addFrame(12, PlayerSpriteSheet::getIdleSprite);
+            .addFrame((long)12, PlayerSpriteSheet::getIdleSprite)
+            .addFrame((long)12, PlayerSpriteSheet::getIdleSprite)
+            .addFrame((long)12, PlayerSpriteSheet::getIdleSprite)
+            .addFrame((long)12, PlayerSpriteSheet::getIdleSprite);
 
         final AnimationState<Player, PlayerSpriteSheet> thrustingState = idleState.createTransitionState((gameState, player) -> player.getAcceleration() > 0 && !player.isBoosting())
-            .addFrame(8, PlayerSpriteSheet::getThrustingSprite)
-            .addFrame(8, PlayerSpriteSheet::getThrustingSprite)
-            .addFrame(8, PlayerSpriteSheet::getThrustingSprite)
-            .addFrame(8, PlayerSpriteSheet::getThrustingSprite)
-            .addFrame(8, PlayerSpriteSheet::getThrustingSprite);
+            .addFrame((long)8, PlayerSpriteSheet::getThrustingSprite)
+            .addFrame((long)8, PlayerSpriteSheet::getThrustingSprite)
+            .addFrame((long)8, PlayerSpriteSheet::getThrustingSprite)
+            .addFrame((long)8, PlayerSpriteSheet::getThrustingSprite)
+            .addFrame((long)8, PlayerSpriteSheet::getThrustingSprite);
 
         thrustingState.createTransition((gameState, player) -> player.getAcceleration() <= 0, idleState);
 
         final AnimationState<Player, PlayerSpriteSheet> boostingState = idleState.createTransitionState((gameState, player) -> player.isBoosting())
-            .addFrame(8, PlayerSpriteSheet::getBoostingSprite)
-            .addFrame(8, PlayerSpriteSheet::getBoostingSprite)
-            .addFrame(8, PlayerSpriteSheet::getBoostingSprite)
-            .addFrame(8, PlayerSpriteSheet::getBoostingSprite)
-            .addFrame(8, PlayerSpriteSheet::getBoostingSprite);
+            .addFrame((long)8, PlayerSpriteSheet::getBoostingSprite)
+            .addFrame((long)8, PlayerSpriteSheet::getBoostingSprite)
+            .addFrame((long)8, PlayerSpriteSheet::getBoostingSprite)
+            .addFrame((long)8, PlayerSpriteSheet::getBoostingSprite)
+            .addFrame((long)8, PlayerSpriteSheet::getBoostingSprite);
 
         thrustingState.createTransition((gameState, player) -> player.isBoosting(), boostingState);
         idleState.createTransition((gameState, player) -> player.isBoosting(), boostingState);
 
         boostingState.createTransition((gameState, player) -> !player.isBoosting() && player.getAcceleration() > 0, thrustingState);
         boostingState.createTransition((gameState, player) -> !player.isBoosting() && player.getAcceleration() <= 0, idleState);
+
+        final AnimationState<Player, PlayerSpriteSheet> deathState = idleState.createTransitionState(((gameState, player) -> player.isDead()))
+            .addFrame((long)7, PlayerSpriteSheet::getDeathSprite)
+            .addFrame((long)7, PlayerSpriteSheet::getDeathSprite)
+            .addFrame((long)7, PlayerSpriteSheet::getDeathSprite)
+            .addFrame((long)7, PlayerSpriteSheet::getDeathSprite)
+            .addFrame((long)7, PlayerSpriteSheet::getDeathSprite)
+            .addFrame((long)7, PlayerSpriteSheet::getDeathSprite)
+            .addFrame((long)7, PlayerSpriteSheet::getDeathSprite)
+            .addFrame((long)7, PlayerSpriteSheet::getDeathSprite)
+            .addFrame((long)7, PlayerSpriteSheet::getDeathSprite)
+            .addFrame(null, PlayerSpriteSheet::getDeathSprite);
+
+        thrustingState.createTransition((gameState, player) -> player.isDead(), deathState);
+        boostingState.createTransition((gameState, player) -> player.isDead(), deathState);
 
         return idleState;
     }
