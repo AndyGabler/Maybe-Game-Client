@@ -14,5 +14,7 @@ import java.util.ArrayList;
 public class GameState implements Serializable {
     private long version = -1;
     private ArrayList<Player> players = new ArrayList<>();
+    private ArrayList<Laser> lasers = new ArrayList<>();
+    private long nextLaserId = 0;
     private IBorder border;
 }

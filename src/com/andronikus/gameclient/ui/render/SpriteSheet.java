@@ -12,7 +12,8 @@ import java.awt.image.BufferedImage;
 public class SpriteSheet {
 
     private final BufferedImage spriteSheet;
-    private final int tileSize;
+    private final int tileWidth;
+    private final int tileHeight;
 
     /**
      * Instantiate a sprite sheet.
@@ -31,8 +32,31 @@ public class SpriteSheet {
      * @param tileSize The size of the tile
      */
     public SpriteSheet(BufferedImage spriteSheet, int tileSize) {
+        this(spriteSheet, tileSize, tileSize);
+    }
+
+    /**
+     * Instantiate a sprite sheet.
+     *
+     * @param spriteSheetPath The path to the sprite sheet
+     * @param tileWidth The size of the tile
+     * @param tileHeight The size of the tile
+     */
+    public SpriteSheet(String spriteSheetPath, int tileWidth, int tileHeight) {
+        this(ImagesUtil.getImage(spriteSheetPath), tileWidth, tileHeight);
+    }
+
+    /**
+     * Instantiate a sprite sheet.
+     *
+     * @param spriteSheet The sprite sheet image
+     * @param tileWidth The size of the tile
+     * @param tileHeight The size of the tile
+     */
+    public SpriteSheet(BufferedImage spriteSheet, int tileWidth, int tileHeight) {
         this.spriteSheet = spriteSheet;
-        this.tileSize = tileSize;
+        this.tileWidth = tileWidth;
+        this.tileHeight = tileHeight;
     }
 
     /**
@@ -43,6 +67,6 @@ public class SpriteSheet {
      * @return The sprite
      */
     protected BufferedImage getTile(int x, int y) {
-        return spriteSheet.getSubimage(x * tileSize, y * tileSize, tileSize, tileSize);
+        return spriteSheet.getSubimage(x * tileWidth, y * tileHeight, tileWidth, tileHeight);
     }
 }

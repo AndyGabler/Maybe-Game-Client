@@ -2,11 +2,13 @@ package com.andronikus.gameclient.ui;
 
 import com.andronikus.game.model.server.BoundingBoxBorder;
 import com.andronikus.game.model.server.GameState;
+import com.andronikus.game.model.server.Laser;
 import com.andronikus.game.model.server.Player;
 import com.andronikus.gameclient.engine.IClientInputSupplier;
 import com.andronikus.gameclient.engine.IGameStateRenderer;
 import com.andronikus.gameclient.engine.IRendererPresetup;
 import com.andronikus.gameclient.ui.keyboard.KeyBoardListener;
+import com.andronikus.gameclient.ui.render.laser.LaserAnimationController;
 import com.andronikus.gameclient.ui.render.player.PlayerAnimationController;
 import lombok.Getter;
 import lombok.Setter;
@@ -46,9 +48,12 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
 
     private final Image background;
     private static final int PLAYER_SIZE = 64;
+    private static final int LASER_WIDTH = 48;
+    private static final int LASER_HEIGHT = 32;
 
     private PlayerAnimationController mainPlayerAnimationController = null;
-    private List<PlayerAnimationController> playerAnimationControllers = new ArrayList<>();
+    private final List<PlayerAnimationController> playerAnimationControllers = new ArrayList<>();
+    private final List<LaserAnimationController> laserAnimationControllers = new ArrayList<>();
 
     /**
      * Instantiate the graphical user interface for a game.
@@ -89,68 +94,113 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
             return;
         }
 
+        // Precompute some variables like current player to reduce operation time for complex operations
+        final Optional<Player> currentPlayerOpt = state.getPlayers().stream().filter(player1 -> player1.getSessionId().equals(sessionId)).findFirst();
+        if (currentPlayerOpt.isEmpty()) {
+            graphics.setColor(Color.BLUE);
+            graphics.fillRect(0, 0, width, height);
+            return;
+        }
+
         // Put an obnoxious color in the background so its obvious if render has gone wrong or missed a spot
         graphics.setColor(Color.MAGENTA);
         graphics.fillRect(0, 0, width, height);
 
-        // Precompute some variables like current player to reduce operation time for complex operations
-        final Optional<Player> currentPlayerOpt = state.getPlayers().stream().filter(player1 -> player1.getSessionId().equals(sessionId)).findFirst();
-        Player player = null;
-        long playerX = 0;
-        long playerY = 0;
-        long maxPlayerX = ((BoundingBoxBorder) state.getBorder()).getMaxX();
-        long maxPlayerY = ((BoundingBoxBorder) state.getBorder()).getMaxY();
-
-        if (currentPlayerOpt.isPresent()) {
-            player = currentPlayerOpt.get();
-            playerX = player.getX();
-            playerY = player.getY();
-        }
-        long transformedPlayerY = maxPlayerY - playerY;
+        final Player player = currentPlayerOpt.get();
+        final long playerX = player.getX();
+        final long playerY = player.getY();
+        final long maxPlayerX = ((BoundingBoxBorder) state.getBorder()).getMaxX();
+        final long maxPlayerY = ((BoundingBoxBorder) state.getBorder()).getMaxY();
 
         // Draw the background
-        double backgroundWidth = (double)maxPlayerX + (double)width * 2;
-        double backgroundHeight = (double)maxPlayerY + (double)height * 2;
+        final long transformedPlayerY = maxPlayerY - playerY;
+        final double backgroundWidth = (double)maxPlayerX + (double)width * 2;
+        final double backgroundHeight = (double)maxPlayerY + (double)height * 2;
         int backGroundX = (int)(-playerX - width);
         int backGroundY = (int)(-transformedPlayerY - height);
         graphics.drawImage(background, backGroundX, backGroundY, (int)backgroundWidth, (int)backgroundHeight, this);
 
-        final Player currentPlayer = player;
-        final long finalPlayerX = playerX;
-        final long finalPlayerY = playerY;
+        // Render lasers that hit something
+        state.getLasers().forEach(laser -> {
+            if (laser.getXVelocity() != 0 || laser.getYVelocity() != 0) {
+                final BufferedImage sprite = getOrCreateAnimationControllerForLaser(laser).nextSprite(state, laser);
+
+                renderObjectRelativeToMainPlayer(
+                    graphics, sprite, laser.getX(), laser.getY(),
+                    LASER_WIDTH, LASER_HEIGHT, laser.getAngle(), playerX, playerY
+                );
+            }
+        });
 
         // Render players
         state.getPlayers().forEach(playerToRender -> {
-            if (playerToRender == currentPlayer) {
+            if (playerToRender == player) {
                 if (mainPlayerAnimationController == null) {
                     mainPlayerAnimationController = new PlayerAnimationController(playerToRender);
                 }
 
                 final BufferedImage sprite = mainPlayerAnimationController.nextSprite(state, playerToRender);
 
-                AffineTransform transform = new AffineTransform();
+                final AffineTransform transform = new AffineTransform();
                 transform.translate(width / 2, height / 2);
                 transform.rotate((playerToRender.getAngle() * -1) + Math.PI / 2);
-                transform.translate(-32, -32);
+                transform.translate(-PLAYER_SIZE / 2, -PLAYER_SIZE / 2);
 
                 ((Graphics2D)graphics).drawImage(sprite, transform, this);
             } else {
                 final BufferedImage sprite = getOrCreateAnimationControllerForPlayer(playerToRender).nextSprite(state, playerToRender);
 
-                int xOffset = (int)(playerToRender.getX() - finalPlayerX);
-                int yOffset = (int)(playerToRender.getY() - finalPlayerY);
+                renderObjectRelativeToMainPlayer(
+                    graphics, sprite, playerToRender.getX(), playerToRender.getY(),
+                    PLAYER_SIZE, PLAYER_SIZE, playerToRender.getAngle(), playerX, playerY
+                );
+            }
+        });
 
-                AffineTransform transform = new AffineTransform();
-                transform.translate(width / 2 + xOffset, height / 2 - yOffset);
-                transform.rotate((playerToRender.getAngle() * -1) + Math.PI / 2);
-                transform.translate(-32, -32);
+        // Render traveling lasers
+        state.getLasers().forEach(laser -> {
+            if (laser.getXVelocity() == 0 && laser.getYVelocity() == 0) {
+                final BufferedImage sprite = getOrCreateAnimationControllerForLaser(laser).nextSprite(state, laser);
 
-                ((Graphics2D)graphics).drawImage(sprite, transform, this);
+                renderObjectRelativeToMainPlayer(
+                    graphics, sprite, laser.getX(), laser.getY(),
+                    LASER_WIDTH, LASER_HEIGHT, laser.getAngle(), playerX, playerY
+                );
             }
         });
 
         graphics.setColor(Color.GREEN);
         graphics.drawRect((int) (playerX * -1) + (width / 2), (int) (playerY - maxPlayerY) + (height / 2), (int)maxPlayerX, (int)maxPlayerY);
+    }
+
+    /**
+     * Render object when its position is relative to the player. This should be most objects since the player is the
+     * center of attention.
+     *
+     * @param graphics The graphics
+     * @param sprite The sprite being rendered
+     * @param x The absolute X location, the relative coordinate will be calculated within this method
+     * @param y The absolute Y location, the relative coordinate will be calculated within this method
+     * @param renderWidth The width of the render
+     * @param renderHeight The height of the render
+     * @param angle The angle of the render
+     * @param playerX X position the main player is at
+     * @param playerY Y position the main player is at
+     */
+    private void renderObjectRelativeToMainPlayer(
+        Graphics graphics, BufferedImage sprite,
+        long x, long y, int renderWidth, int renderHeight, double angle,
+        long playerX, long playerY
+    ) {
+        final int xOffset = (int)(x - playerX);
+        final int yOffset = (int)(y - playerY);
+
+        final AffineTransform transform = new AffineTransform();
+        transform.translate(this.width / 2 + xOffset, this.height / 2 - yOffset);
+        transform.rotate((angle * -1) + Math.PI / 2);
+        transform.translate(-(renderWidth / 2), -(renderHeight / 2));
+
+        ((Graphics2D)graphics).drawImage(sprite, transform, this);
     }
 
     /**
@@ -167,6 +217,24 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
             .orElseGet(() -> {
                 final PlayerAnimationController newController = new PlayerAnimationController(player);
                 playerAnimationControllers.add(newController);
+                return newController;
+            });
+    }
+
+    /**
+     * Get or create animation controller for a laser.
+     *
+     * @param laser The laser
+     * @return The laser's animation controller, whether newly created or old
+     */
+    private LaserAnimationController getOrCreateAnimationControllerForLaser(Laser laser) {
+        return laserAnimationControllers
+            .stream()
+            .filter(controller -> controller.checkIfObjectIsAnimatedEntity(laser))
+            .findFirst()
+            .orElseGet(() -> {
+                final LaserAnimationController newController = new LaserAnimationController(laser);
+                laserAnimationControllers.add(newController);
                 return newController;
             });
     }
