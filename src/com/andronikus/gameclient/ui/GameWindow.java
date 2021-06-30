@@ -132,6 +132,16 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
             }
         });
 
+        // TODO remove me. This is for debugging purposes.
+        graphics.setColor(new Color(50, 255, 200));
+        graphics.drawString("  Boosting Charge: " + player.getBoostingCharge(), 50, 250);
+        graphics.drawString("Boosting Recharge: " + player.getBoostingRecharge(), 50, 275);
+        graphics.drawString("           Health: " + player.getHealth(), 50, 300);
+        graphics.drawString("     Shield Count: " + player.getShieldCount(), 50, 325);
+        graphics.drawString("  Shield Recharge: " + player.getShieldRecharge(), 50, 350);
+        graphics.drawString("   Laser Recharge: " + player.getLaserRecharge(), 50, 375);
+        graphics.drawString("    Laser Charges: " + player.getLaserCharges(), 50, 400);
+
         // Render players
         state.getPlayers().forEach(playerToRender -> {
             if (playerToRender == player) {

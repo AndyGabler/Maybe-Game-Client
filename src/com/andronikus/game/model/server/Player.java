@@ -24,11 +24,19 @@ public class Player implements Serializable {
     private long acceleration = 0;
 
     private boolean boosting = false;
+    private int boostingCharge;
+    private int boostingRecharge;
 
     private double angle;
     private double rotationalVelocity = 0;
 
     private int health;
-    private int shieldCount;
     private boolean dead;
+
+    private int shieldCount;
+    private int shieldRecharge;
+    private boolean shieldLostThisTick;
+
+    private int laserCharges;
+    private int laserRecharge;
 }
