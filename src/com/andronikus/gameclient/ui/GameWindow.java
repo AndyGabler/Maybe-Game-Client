@@ -8,6 +8,8 @@ import com.andronikus.gameclient.engine.IClientInputSupplier;
 import com.andronikus.gameclient.engine.IGameStateRenderer;
 import com.andronikus.gameclient.engine.IRendererPresetup;
 import com.andronikus.gameclient.ui.keyboard.KeyBoardListener;
+import com.andronikus.gameclient.ui.render.hud.HudRenderer;
+import com.andronikus.gameclient.ui.render.hud.TrackerSpriteSheet;
 import com.andronikus.gameclient.ui.render.laser.LaserAnimationController;
 import com.andronikus.gameclient.ui.render.player.PlayerAnimationController;
 import lombok.Getter;
@@ -54,6 +56,9 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
     private PlayerAnimationController mainPlayerAnimationController = null;
     private final List<PlayerAnimationController> playerAnimationControllers = new ArrayList<>();
     private final List<LaserAnimationController> laserAnimationControllers = new ArrayList<>();
+
+    private final HudRenderer hudRenderer = new HudRenderer();
+    private final TrackerSpriteSheet trackerSpriteSheet = new TrackerSpriteSheet();
 
     /**
      * Instantiate the graphical user interface for a game.
@@ -132,16 +137,6 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
             }
         });
 
-        // TODO remove me. This is for debugging purposes.
-        graphics.setColor(new Color(50, 255, 200));
-        graphics.drawString("  Boosting Charge: " + player.getBoostingCharge(), 50, 250);
-        graphics.drawString("Boosting Recharge: " + player.getBoostingRecharge(), 50, 275);
-        graphics.drawString("           Health: " + player.getHealth(), 50, 300);
-        graphics.drawString("     Shield Count: " + player.getShieldCount(), 50, 325);
-        graphics.drawString("  Shield Recharge: " + player.getShieldRecharge(), 50, 350);
-        graphics.drawString("   Laser Recharge: " + player.getLaserRecharge(), 50, 375);
-        graphics.drawString("    Laser Charges: " + player.getLaserCharges(), 50, 400);
-
         // Render players
         state.getPlayers().forEach(playerToRender -> {
             if (playerToRender == player) {
@@ -164,6 +159,20 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
                     graphics, sprite, playerToRender.getX(), playerToRender.getY(),
                     PLAYER_SIZE, PLAYER_SIZE, playerToRender.getAngle(), playerX, playerY
                 );
+
+                final BufferedImage tracker = trackerSpriteSheet.getTrackerSpriteForColor(playerToRender.getColor());
+                final long yDiff = playerToRender.getY() - player.getY();
+                final long xDiff = playerToRender.getX() - player.getX();
+                if (Math.abs(yDiff) > height / 2 || Math.abs(xDiff) > width / 2) {
+                    // Render tracker for player outside of visible range
+                    drawTrackerForOffScreenPlayer(graphics, tracker, (double)xDiff, (double)yDiff);
+                } else {
+                    // Render tracker for player that is within visible range
+                    renderObjectRelativeToMainPlayer(
+                        graphics, tracker, playerToRender.getX(), playerToRender.getY() + PLAYER_SIZE,
+                            PLAYER_SIZE / 2, PLAYER_SIZE / 2, Math.PI / 2 * 3, playerX, playerY
+                    );
+                }
             }
         });
 
@@ -181,6 +190,85 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
 
         graphics.setColor(Color.GREEN);
         graphics.drawRect((int) (playerX * -1) + (width / 2), (int) (playerY - maxPlayerY) + (height / 2), (int)maxPlayerX, (int)maxPlayerY);
+
+        hudRenderer.drawHud(
+            graphics, player.getHealth(), player.getShieldCount(), player.getShieldRecharge(),
+            player.getBoostingCharge(), player.getBoostingRecharge(), player.getLaserCharges(), this
+        );
+    }
+
+    /**
+     * Draw a tracker for a player that is off the screen.
+     *
+     * @param graphics The graphics
+     * @param trackerSprite The sprite used to track the player
+     * @param xDiff The difference in X location from the client player
+     * @param yDiff The difference in Y location from the client player
+     */
+    private void drawTrackerForOffScreenPlayer(Graphics graphics, BufferedImage trackerSprite, double xDiff, double yDiff) {
+        final double screenHypotenuse = Math.sqrt(Math.pow(height, 2) + Math.pow(width, 2));
+        final double thetaBr = Math.acos((double)width / screenHypotenuse);
+        final double thetaBl = Math.PI - thetaBr;
+        final double thetaTl = Math.PI + thetaBr;
+
+        final double distanceFromOtherPlayer = Math.sqrt(Math.pow(yDiff, 2) + Math.pow(xDiff, 2));
+        final double phi = Math.acos(xDiff / distanceFromOtherPlayer);
+
+        int xDrawLocation = 0;
+        int yDrawLocation = 0;
+
+        if (thetaBl > phi && phi >= thetaBr) {
+            double yLocationFromPlayer;
+            int yOffset = 0;
+            double xLocationFromPlayer = 0;
+
+            if (yDiff > 0) {
+                // dY = height/2 ON TOP
+                yLocationFromPlayer = (double)height / -2;
+                if (xDiff != 0) {
+                    xLocationFromPlayer = -yLocationFromPlayer / Math.tan(phi);
+                }
+            } else {
+                // dY = -height/2 ON BOTTOM
+                yLocationFromPlayer = (double)height / 2;
+                yOffset = -32;
+                if (xDiff != 0) {
+                    xLocationFromPlayer = yLocationFromPlayer / Math.tan(phi);
+                }
+            }
+
+            xDrawLocation = (int)(xLocationFromPlayer + width / 2 - 16);
+            yDrawLocation = (int)(yLocationFromPlayer + height / 2 + yOffset);
+        } else if (thetaTl > phi && phi >= thetaBl) {
+            // dX = -width/2 ON LEFT
+            double xLocationFromPlayer = -(double)width / 2;
+            double yLocationFromPlayer = Math.tan(phi) * -xLocationFromPlayer;
+
+            if (yDiff != 0) {
+                yLocationFromPlayer *= (yDiff / Math.abs(yDiff));
+            }
+
+            xDrawLocation = (int)xLocationFromPlayer + width / 2;
+            yDrawLocation = (int)yLocationFromPlayer + height / 2 - 16;
+        } else {
+            // dX = width/2 ON RIGHT
+            double xLocationFromPlayer = (double)width / 2;
+            double yLocationFromPlayer = Math.tan(phi) * -xLocationFromPlayer;
+
+            if (yDiff != 0) {
+                yLocationFromPlayer *= (yDiff / Math.abs(yDiff));
+            }
+
+            xDrawLocation = (int)xLocationFromPlayer + width / 2 - 32;
+            yDrawLocation = (int)yLocationFromPlayer + height / 2 - 16;
+        }
+
+        final AffineTransform transform = new AffineTransform();
+        transform.translate(xDrawLocation + 16, yDrawLocation + 16);
+        transform.rotate((phi * -1) + Math.PI / 2);
+        transform.translate(-(32 / 2), -(32 / 2));
+
+        ((Graphics2D)graphics).drawImage(trackerSprite, transform, this);
     }
 
     /**

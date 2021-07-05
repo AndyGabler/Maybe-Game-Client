@@ -39,4 +39,6 @@ public class Player implements Serializable {
 
     private int laserCharges;
     private int laserRecharge;
+
+    private PlayerColor color;
 }
