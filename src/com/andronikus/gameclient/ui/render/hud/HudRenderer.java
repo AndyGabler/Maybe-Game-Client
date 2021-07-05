@@ -91,14 +91,14 @@ public class HudRenderer {
 
         graphics.setColor(Color.BLUE);
         final double boostChargeLength = (double)boostCharge / BOOSTING_RECHARGE_CAP * (double)(HUD_WIDTH - 6);
-        graphics.fillRect(HUD_OFFSET + 4, HUD_OFFSET + 148, (int)boostChargeLength, 36);
+        graphics.fillRect(HUD_OFFSET + 4, HUD_OFFSET + (HUD_SECTION_OFFSET * 2) + 24, (int)boostChargeLength, 36);
 
         // Draw a laser counter
         graphics.setColor(Color.LIGHT_GRAY);
-        graphics.drawLine(HUD_OFFSET, HUD_OFFSET + 200, HUD_OFFSET, HUD_OFFSET + 200 + 15);
-        graphics.drawLine(HUD_OFFSET, HUD_OFFSET + 200 + 15, HUD_OFFSET + HUD_WIDTH, HUD_OFFSET + 200 + 15);
+        graphics.drawLine(HUD_OFFSET, HUD_OFFSET + (HUD_SECTION_OFFSET * 3), HUD_OFFSET, HUD_OFFSET + (HUD_SECTION_OFFSET * 3) + 29);
+        graphics.drawLine(HUD_OFFSET, HUD_OFFSET + (HUD_SECTION_OFFSET * 3) + 29, HUD_OFFSET + HUD_WIDTH, HUD_OFFSET + (HUD_SECTION_OFFSET * 3) + 29);
 
-        final int laserChargeY = HUD_OFFSET + 200 + 4;
+        final int laserChargeY = HUD_OFFSET + (HUD_SECTION_OFFSET * 3) + 18;
         int laserChargeX = HUD_OFFSET + 3;
 
         while (laserCharge > 0) {
