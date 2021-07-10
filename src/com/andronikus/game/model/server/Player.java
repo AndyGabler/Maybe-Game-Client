@@ -2,15 +2,13 @@ package com.andronikus.game.model.server;
 
 import lombok.Data;
 
-import java.io.Serializable;
-
 /**
  * A player in the game.
  *
  * @author Andronikus
  */
 @Data
-public class Player implements Serializable {
+public class Player implements ICollideable {
 
     private String sessionId;
 
@@ -41,4 +39,44 @@ public class Player implements Serializable {
     private int laserRecharge;
 
     private PlayerColor color;
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public long getBoxX() {
+        return x;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public long getBoxY() {
+        return y;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int getBoxWidth() {
+        return 64;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int getBoxHeight() {
+        return 64;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getTilt() {
+        return angle;
+    }
 }

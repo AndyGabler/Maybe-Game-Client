@@ -163,15 +163,18 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
                 final BufferedImage tracker = trackerSpriteSheet.getTrackerSpriteForColor(playerToRender.getColor());
                 final long yDiff = playerToRender.getY() - player.getY();
                 final long xDiff = playerToRender.getX() - player.getX();
-                if (Math.abs(yDiff) > height / 2 || Math.abs(xDiff) > width / 2) {
-                    // Render tracker for player outside of visible range
-                    drawTrackerForOffScreenPlayer(graphics, tracker, (double)xDiff, (double)yDiff);
-                } else {
-                    // Render tracker for player that is within visible range
-                    renderObjectRelativeToMainPlayer(
-                        graphics, tracker, playerToRender.getX(), playerToRender.getY() + PLAYER_SIZE,
-                            PLAYER_SIZE / 2, PLAYER_SIZE / 2, Math.PI / 2 * 3, playerX, playerY
-                    );
+
+                if (!playerToRender.isDead()) {
+                    if (Math.abs(yDiff) > height / 2 || Math.abs(xDiff) > width / 2) {
+                        // Render tracker for player outside of visible range
+                        drawTrackerForOffScreenPlayer(graphics, tracker, (double) xDiff, (double) yDiff);
+                    } else {
+                        // Render tracker for player that is within visible range
+                        renderObjectRelativeToMainPlayer(
+                                graphics, tracker, playerToRender.getX(), playerToRender.getY() + PLAYER_SIZE,
+                                PLAYER_SIZE / 2, PLAYER_SIZE / 2, Math.PI / 2 * 3, playerX, playerY
+                        );
+                    }
                 }
             }
         });
