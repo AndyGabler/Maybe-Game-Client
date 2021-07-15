@@ -26,6 +26,9 @@ public class StaticKeyboardInputMapper implements IKeyBoardInputMapper {
                     case KeyEvent.VK_SPACE:
                         inputCode = "SHOOT";
                         break;
+                    case KeyEvent.VK_W:
+                        inputCode = "THRUSTEND";
+                        break;
                 }
                 break;
             case TYPED:

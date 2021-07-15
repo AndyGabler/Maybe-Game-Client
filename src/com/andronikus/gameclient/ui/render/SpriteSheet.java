@@ -67,6 +67,9 @@ public class SpriteSheet {
      * @return The sprite
      */
     protected BufferedImage getTile(int x, int y) {
+        if (x < 0 || y < 0) {
+            throw new IllegalArgumentException("Tile X and Y must be zero or higher.");
+		}
         return spriteSheet.getSubimage(x * tileWidth, y * tileHeight, tileWidth, tileHeight);
     }
 }

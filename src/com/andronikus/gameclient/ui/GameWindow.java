@@ -1,17 +1,22 @@
 package com.andronikus.gameclient.ui;
 
+import com.andronikus.game.model.server.Asteroid;
 import com.andronikus.game.model.server.BoundingBoxBorder;
 import com.andronikus.game.model.server.GameState;
 import com.andronikus.game.model.server.Laser;
 import com.andronikus.game.model.server.Player;
+import com.andronikus.game.model.server.Snake;
 import com.andronikus.gameclient.engine.IClientInputSupplier;
 import com.andronikus.gameclient.engine.IGameStateRenderer;
 import com.andronikus.gameclient.engine.IRendererPresetup;
 import com.andronikus.gameclient.ui.keyboard.KeyBoardListener;
+import com.andronikus.gameclient.ui.render.asteroid.LargeAsteroidAnimationController;
+import com.andronikus.gameclient.ui.render.asteroid.SmallAsteroidAnimationController;
 import com.andronikus.gameclient.ui.render.hud.HudRenderer;
 import com.andronikus.gameclient.ui.render.hud.TrackerSpriteSheet;
 import com.andronikus.gameclient.ui.render.laser.LaserAnimationController;
 import com.andronikus.gameclient.ui.render.player.PlayerAnimationController;
+import com.andronikus.gameclient.ui.render.snake.SnakeAnimationController;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -52,10 +57,18 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
     private static final int PLAYER_SIZE = 64;
     private static final int LASER_WIDTH = 48;
     private static final int LASER_HEIGHT = 32;
+    private static final int SMALL_ASTEROID_SIZE = 64;
+    private static final int LARGE_ASTEROID_WIDTH = 96;
+    private static final int LARGE_ASTEROID_HEIGHT = 192;
+    private static final int SNAKE_WIDTH = 16;
+    private static final int SNAKE_HEIGHT = 64;
 
     private PlayerAnimationController mainPlayerAnimationController = null;
     private final List<PlayerAnimationController> playerAnimationControllers = new ArrayList<>();
     private final List<LaserAnimationController> laserAnimationControllers = new ArrayList<>();
+    private final List<SmallAsteroidAnimationController> smallAsteroidAnimationControllers = new ArrayList<>();
+    private final List<LargeAsteroidAnimationController> largeAsteroidAnimationControllers = new ArrayList<>();
+    private final List<SnakeAnimationController> snakeAnimationControllers = new ArrayList<>();
 
     private final HudRenderer hudRenderer = new HudRenderer();
     private final TrackerSpriteSheet trackerSpriteSheet = new TrackerSpriteSheet();
@@ -90,6 +103,7 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
      * @param graphics The graphics to draw on.
      */
     public void paintComponent(Graphics graphics) {
+        // TODO generify iterative animations
 
         // Check if the game state is loaded in (that is, has the server acked us, if not, blue screen)
         final GameState state = latestGameState;
@@ -171,11 +185,38 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
                     } else {
                         // Render tracker for player that is within visible range
                         renderObjectRelativeToMainPlayer(
-                                graphics, tracker, playerToRender.getX(), playerToRender.getY() + PLAYER_SIZE,
-                                PLAYER_SIZE / 2, PLAYER_SIZE / 2, Math.PI / 2 * 3, playerX, playerY
+                            graphics, tracker, playerToRender.getX(), playerToRender.getY() + PLAYER_SIZE,
+                            PLAYER_SIZE / 2, PLAYER_SIZE / 2, Math.PI / 2 * 3, playerX, playerY
                         );
                     }
                 }
+            }
+        });
+
+        // Render snakes
+        state.getSnakes().forEach(snake -> {
+            final BufferedImage sprite = getOrCreateAnimationControllerForSnake(snake).nextSprite(state, snake);
+            renderObjectRelativeToMainPlayer(
+                graphics, sprite, snake.getX(), snake.getY(), SNAKE_WIDTH, SNAKE_HEIGHT, snake.getAngle(), playerX, playerY
+            );
+        });
+
+        // Render asteroids
+        state.getAsteroids().forEach(asteroid -> {
+            if (asteroid.getSize() == 0) {
+                final BufferedImage sprite = getOrCreateAnimationControllerForSmallAsteroid(asteroid).nextSprite(state, asteroid);
+
+                renderObjectRelativeToMainPlayer(
+                    graphics, sprite, asteroid.getX(), asteroid.getY(),
+                    SMALL_ASTEROID_SIZE, SMALL_ASTEROID_SIZE, asteroid.getAngle(), playerX, playerY
+                );
+            } else {
+                final BufferedImage sprite = getOrCreateAnimationControllerForLargeAsteroid(asteroid).nextSprite(state, asteroid);
+
+                renderObjectRelativeToMainPlayer(
+                    graphics, sprite, asteroid.getX(), asteroid.getY(),
+                    LARGE_ASTEROID_WIDTH, LARGE_ASTEROID_HEIGHT, asteroid.getAngle(), playerX, playerY
+                );
             }
         });
 
@@ -305,6 +346,24 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
     }
 
     /**
+     * Get or create animation controller for a snake.
+     *
+     * @param snake The snake
+     * @return The snake's animation controller, whether newly created or old
+     */
+    private SnakeAnimationController getOrCreateAnimationControllerForSnake(Snake snake) {
+        return snakeAnimationControllers
+            .stream()
+            .filter(controller -> controller.checkIfObjectIsAnimatedEntity(snake))
+            .findFirst()
+            .orElseGet(() -> {
+                final SnakeAnimationController newController = new SnakeAnimationController(snake);
+                snakeAnimationControllers.add(newController);
+                return newController;
+            });
+    }
+
+    /**
      * Get or create animation controller for a player that is not the client player.
      *
      * @param player The player
@@ -336,6 +395,42 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
             .orElseGet(() -> {
                 final LaserAnimationController newController = new LaserAnimationController(laser);
                 laserAnimationControllers.add(newController);
+                return newController;
+            });
+    }
+
+    /**
+     * Get or create animation controller for a small asteroid.
+     *
+     * @param asteroid The asteroid
+     * @return The asteroid's animation controller, whether newly created or old
+     */
+    private SmallAsteroidAnimationController getOrCreateAnimationControllerForSmallAsteroid(Asteroid asteroid) {
+        return smallAsteroidAnimationControllers
+            .stream()
+            .filter(controller -> controller.checkIfObjectIsAnimatedEntity(asteroid))
+            .findFirst()
+            .orElseGet(() -> {
+                final SmallAsteroidAnimationController newController = new SmallAsteroidAnimationController(asteroid);
+                smallAsteroidAnimationControllers.add(newController);
+                return newController;
+            });
+    }
+
+    /**
+     * Get or create animation controller for a large asteroid.
+     *
+     * @param asteroid The asteroid
+     * @return The asteroid's animation controller, whether newly created or old
+     */
+    private LargeAsteroidAnimationController getOrCreateAnimationControllerForLargeAsteroid(Asteroid asteroid) {
+        return largeAsteroidAnimationControllers
+            .stream()
+            .filter(controller -> controller.checkIfObjectIsAnimatedEntity(asteroid))
+            .findFirst()
+            .orElseGet(() -> {
+                final LargeAsteroidAnimationController newController = new LargeAsteroidAnimationController(asteroid);
+                largeAsteroidAnimationControllers.add(newController);
                 return newController;
             });
     }

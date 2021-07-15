@@ -16,6 +16,9 @@ public class GameState implements Serializable {
     private ArrayList<ICollideable> collideables = new ArrayList<>();
     private ArrayList<Player> players = new ArrayList<>();
     private ArrayList<Laser> lasers = new ArrayList<>();
+    private ArrayList<Asteroid> asteroids = new ArrayList<>();
+    private ArrayList<Snake> snakes = new ArrayList<>();
     private long nextLaserId = 0;
+    private long nextSpawnId = 0;
     private IBorder border;
 }

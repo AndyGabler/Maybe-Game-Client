@@ -38,14 +38,14 @@ public class PlayerAnimationController extends AnimationController<Player, Playe
             .addFrame((long)12, PlayerSpriteSheet::getIdleSprite)
             .addFrame((long)12, PlayerSpriteSheet::getIdleSprite);
 
-        final AnimationState<Player, PlayerSpriteSheet> thrustingState = idleState.createTransitionState((gameState, player) -> player.getAcceleration() > 0 && !player.isBoosting())
+        final AnimationState<Player, PlayerSpriteSheet> thrustingState = idleState.createTransitionState((gameState, player) -> player.isThrusting() && !player.isBoosting())
             .addFrame((long)8, PlayerSpriteSheet::getThrustingSprite)
             .addFrame((long)8, PlayerSpriteSheet::getThrustingSprite)
             .addFrame((long)8, PlayerSpriteSheet::getThrustingSprite)
             .addFrame((long)8, PlayerSpriteSheet::getThrustingSprite)
             .addFrame((long)8, PlayerSpriteSheet::getThrustingSprite);
 
-        thrustingState.createTransition((gameState, player) -> player.getAcceleration() <= 0, idleState);
+        thrustingState.createTransition((gameState, player) -> !player.isThrusting() && !player.isBoosting(), idleState);
 
         final AnimationState<Player, PlayerSpriteSheet> boostingState = idleState.createTransitionState((gameState, player) -> player.isBoosting())
             .addFrame((long)8, PlayerSpriteSheet::getBoostingSprite)
@@ -57,8 +57,8 @@ public class PlayerAnimationController extends AnimationController<Player, Playe
         thrustingState.createTransition((gameState, player) -> player.isBoosting(), boostingState);
         idleState.createTransition((gameState, player) -> player.isBoosting(), boostingState);
 
-        boostingState.createTransition((gameState, player) -> !player.isBoosting() && player.getAcceleration() > 0, thrustingState);
-        boostingState.createTransition((gameState, player) -> !player.isBoosting() && player.getAcceleration() <= 0, idleState);
+        boostingState.createTransition((gameState, player) -> !player.isBoosting() && player.isThrusting(), thrustingState);
+        boostingState.createTransition((gameState, player) -> !player.isBoosting() && !player.isThrusting(), idleState);
 
         final AnimationState<Player, PlayerSpriteSheet> deathState = idleState.createTransitionState(((gameState, player) -> player.isDead()))
             .addFrame((long)7, PlayerSpriteSheet::getDeathSprite)
