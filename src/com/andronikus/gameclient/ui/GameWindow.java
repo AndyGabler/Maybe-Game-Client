@@ -4,7 +4,9 @@ import com.andronikus.game.model.server.Asteroid;
 import com.andronikus.game.model.server.BoundingBoxBorder;
 import com.andronikus.game.model.server.GameState;
 import com.andronikus.game.model.server.Laser;
+import com.andronikus.game.model.server.MicroBlackHole;
 import com.andronikus.game.model.server.Player;
+import com.andronikus.game.model.server.Portal;
 import com.andronikus.game.model.server.Snake;
 import com.andronikus.gameclient.engine.IClientInputSupplier;
 import com.andronikus.gameclient.engine.IGameStateRenderer;
@@ -12,10 +14,12 @@ import com.andronikus.gameclient.engine.IRendererPresetup;
 import com.andronikus.gameclient.ui.keyboard.KeyBoardListener;
 import com.andronikus.gameclient.ui.render.asteroid.LargeAsteroidAnimationController;
 import com.andronikus.gameclient.ui.render.asteroid.SmallAsteroidAnimationController;
+import com.andronikus.gameclient.ui.render.blackhole.MicroBlackHoleAnimationController;
 import com.andronikus.gameclient.ui.render.hud.HudRenderer;
 import com.andronikus.gameclient.ui.render.hud.TrackerSpriteSheet;
 import com.andronikus.gameclient.ui.render.laser.LaserAnimationController;
 import com.andronikus.gameclient.ui.render.player.PlayerAnimationController;
+import com.andronikus.gameclient.ui.render.portal.PortalAnimationController;
 import com.andronikus.gameclient.ui.render.snake.SnakeAnimationController;
 import lombok.Getter;
 import lombok.Setter;
@@ -62,6 +66,8 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
     private static final int LARGE_ASTEROID_HEIGHT = 192;
     private static final int SNAKE_WIDTH = 16;
     private static final int SNAKE_HEIGHT = 64;
+    private static final int BLACK_HOLE_SIZE = 128;
+    private static final int PORTAL_SIZE = 64;
 
     private PlayerAnimationController mainPlayerAnimationController = null;
     private final List<PlayerAnimationController> playerAnimationControllers = new ArrayList<>();
@@ -69,6 +75,8 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
     private final List<SmallAsteroidAnimationController> smallAsteroidAnimationControllers = new ArrayList<>();
     private final List<LargeAsteroidAnimationController> largeAsteroidAnimationControllers = new ArrayList<>();
     private final List<SnakeAnimationController> snakeAnimationControllers = new ArrayList<>();
+    private final List<PortalAnimationController> portalAnimationControllers = new ArrayList<>();
+    private final List<MicroBlackHoleAnimationController> blackHoleAnimationControllers = new ArrayList<>();
 
     private final HudRenderer hudRenderer = new HudRenderer();
     private final TrackerSpriteSheet trackerSpriteSheet = new TrackerSpriteSheet();
@@ -149,6 +157,24 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
                     LASER_WIDTH, LASER_HEIGHT, laser.getAngle(), playerX, playerY
                 );
             }
+        });
+
+        state.getBlackHoles().forEach(blackHole -> {
+            final BufferedImage sprite = getOrCreateAnimationControllerForBlackHole(blackHole).nextSprite(state, blackHole);
+
+            renderObjectRelativeToMainPlayer(
+                graphics, sprite, blackHole.getX(), blackHole.getY(),
+                PORTAL_SIZE, PORTAL_SIZE, blackHole.getAngle(), playerX, playerY
+            );
+        });
+
+        state.getPortals().forEach(portal -> {
+            final BufferedImage sprite = getOrCreateAnimationControllerForPortal(portal).nextSprite(state, portal);
+
+            renderObjectRelativeToMainPlayer(
+                graphics, sprite, portal.getX(), portal.getY(),
+                PORTAL_SIZE, PORTAL_SIZE, portal.getAngle(), playerX, playerY
+            );
         });
 
         // Render players
@@ -431,6 +457,42 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
             .orElseGet(() -> {
                 final LargeAsteroidAnimationController newController = new LargeAsteroidAnimationController(asteroid);
                 largeAsteroidAnimationControllers.add(newController);
+                return newController;
+            });
+    }
+
+    /**
+     * Get or create animation controller for a black hole.
+     *
+     * @param blackHole The black hole
+     * @return The black hole's animation controller, whether newly created or old
+     */
+    private MicroBlackHoleAnimationController getOrCreateAnimationControllerForBlackHole(MicroBlackHole blackHole) {
+        return blackHoleAnimationControllers
+            .stream()
+            .filter(controller -> controller.checkIfObjectIsAnimatedEntity(blackHole))
+            .findFirst()
+            .orElseGet(() -> {
+                final MicroBlackHoleAnimationController newController = new MicroBlackHoleAnimationController(blackHole);
+                blackHoleAnimationControllers.add(newController);
+                return newController;
+            });
+    }
+
+    /**
+     * Get or create animation controller for a portal.
+     *
+     * @param portal The portal
+     * @return The portal's animation controller, whether newly created or old
+     */
+    private PortalAnimationController getOrCreateAnimationControllerForPortal(Portal portal) {
+        return portalAnimationControllers
+            .stream()
+            .filter(controller -> controller.checkIfObjectIsAnimatedEntity(portal))
+            .findFirst()
+            .orElseGet(() -> {
+                final PortalAnimationController newController = new PortalAnimationController(portal);
+                portalAnimationControllers.add(newController);
                 return newController;
             });
     }

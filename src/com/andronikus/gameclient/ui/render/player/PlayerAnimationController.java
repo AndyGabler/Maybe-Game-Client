@@ -61,19 +61,36 @@ public class PlayerAnimationController extends AnimationController<Player, Playe
         boostingState.createTransition((gameState, player) -> !player.isBoosting() && !player.isThrusting(), idleState);
 
         final AnimationState<Player, PlayerSpriteSheet> deathState = idleState.createTransitionState(((gameState, player) -> player.isDead()))
-            .addFrame((long)7, PlayerSpriteSheet::getDeathSprite)
-            .addFrame((long)7, PlayerSpriteSheet::getDeathSprite)
-            .addFrame((long)7, PlayerSpriteSheet::getDeathSprite)
-            .addFrame((long)7, PlayerSpriteSheet::getDeathSprite)
-            .addFrame((long)7, PlayerSpriteSheet::getDeathSprite)
-            .addFrame((long)7, PlayerSpriteSheet::getDeathSprite)
-            .addFrame((long)7, PlayerSpriteSheet::getDeathSprite)
-            .addFrame((long)7, PlayerSpriteSheet::getDeathSprite)
-            .addFrame((long)7, PlayerSpriteSheet::getDeathSprite)
+            .addFrame((long)2, PlayerSpriteSheet::getDeathSprite)
+            .addFrame((long)2, PlayerSpriteSheet::getDeathSprite)
+            .addFrame((long)3, PlayerSpriteSheet::getDeathSprite)
+            .addFrame((long)3, PlayerSpriteSheet::getDeathSprite)
+            .addFrame((long)4, PlayerSpriteSheet::getDeathSprite)
+            .addFrame((long)4, PlayerSpriteSheet::getDeathSprite)
+            .addFrame((long)3, PlayerSpriteSheet::getDeathSprite)
+            .addFrame((long)2, PlayerSpriteSheet::getDeathSprite)
+            .addFrame((long)2, PlayerSpriteSheet::getDeathSprite)
             .addFrame(null, PlayerSpriteSheet::getDeathSprite);
 
         thrustingState.createTransition((gameState, player) -> player.isDead(), deathState);
         boostingState.createTransition((gameState, player) -> player.isDead(), deathState);
+
+        final AnimationState<Player, PlayerSpriteSheet> warpingState = idleState.createTransitionState((gameState, player) -> player.getCollidedPortalId() != null)
+            .addFrame(5L, PlayerSpriteSheet::getWarpingSprite)
+            .addFrame(4L, PlayerSpriteSheet::getWarpingSprite)
+            .addFrame(3L, PlayerSpriteSheet::getWarpingSprite)
+            .addFrame(6L, PlayerSpriteSheet::getWarpingSprite);
+
+        boostingState.createTransition((gameState, player) -> player.getCollidedPortalId() != null, warpingState);
+        thrustingState.createTransition((gameState, player) -> player.getCollidedPortalId() != null, warpingState);
+
+        final AnimationState<Player, PlayerSpriteSheet> reappearingState = warpingState.createTransitionState((gameState, player) -> player.isPerformedWarp() || player.getCollidedPortalId() == null)
+            .addFrame(6L, PlayerSpriteSheet::getReappearingSprite)
+            .addFrame(3L, PlayerSpriteSheet::getReappearingSprite)
+            .addFrame(4L, PlayerSpriteSheet::getReappearingSprite)
+            .addFrame(5L, PlayerSpriteSheet::getReappearingSprite);
+
+        reappearingState.createTransition((gameState, player) -> player.getCollidedPortalId() == null, idleState);
 
         return idleState;
     }

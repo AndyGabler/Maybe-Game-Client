@@ -56,4 +56,24 @@ public class PlayerSpriteSheet extends SpriteSheet {
     public BufferedImage getDeathSprite(int animationState) {
         return getTile(3, animationState);
     }
+
+    /**
+     * Get sprite for the warping of the player.
+     *
+     * @param animationState Animation state, ranging from 0-3
+     * @return Sprite on the grid for the player
+     */
+    public BufferedImage getWarpingSprite(int animationState) {
+        return getTile(4, animationState);
+    }
+
+    /**
+     * Get sprite for the reappearing of the player.
+     *
+     * @param animationState Animation state, ranging from 0-3
+     * @return Sprite on the grid for the player
+     */
+    public BufferedImage getReappearingSprite(int animationState) {
+        return getTile(4, 3 - animationState);
+    }
 }

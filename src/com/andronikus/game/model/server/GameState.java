@@ -18,6 +18,8 @@ public class GameState implements Serializable {
     private ArrayList<Laser> lasers = new ArrayList<>();
     private ArrayList<Asteroid> asteroids = new ArrayList<>();
     private ArrayList<Snake> snakes = new ArrayList<>();
+    private ArrayList<MicroBlackHole> blackHoles = new ArrayList<>();
+    private ArrayList<Portal> portals = new ArrayList<>();
     private long nextLaserId = 0;
     private long nextSpawnId = 0;
     private IBorder border;
