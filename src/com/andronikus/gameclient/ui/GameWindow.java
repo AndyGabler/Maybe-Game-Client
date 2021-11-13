@@ -66,7 +66,6 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
     private static final int LARGE_ASTEROID_HEIGHT = 192;
     private static final int SNAKE_WIDTH = 16;
     private static final int SNAKE_HEIGHT = 64;
-    private static final int BLACK_HOLE_SIZE = 128;
     private static final int PORTAL_SIZE = 64;
 
     private PlayerAnimationController mainPlayerAnimationController = null;
@@ -241,7 +240,7 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
 
                 renderObjectRelativeToMainPlayer(
                     graphics, sprite, asteroid.getX(), asteroid.getY(),
-                    LARGE_ASTEROID_WIDTH, LARGE_ASTEROID_HEIGHT, asteroid.getAngle(), playerX, playerY
+                    LARGE_ASTEROID_WIDTH, LARGE_ASTEROID_HEIGHT, asteroid.getAngle(), playerX, playerY, true
                 );
             }
         });
@@ -356,16 +355,45 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
      * @param playerY Y position the main player is at
      */
     private void renderObjectRelativeToMainPlayer(
+            Graphics graphics, BufferedImage sprite,
+            long x, long y, int renderWidth, int renderHeight, double angle,
+            long playerX, long playerY
+    ) {
+        renderObjectRelativeToMainPlayer(graphics, sprite, x, y, renderWidth, renderHeight, angle, playerX, playerY, false);
+    }
+
+    /**
+     * Render object when its position is relative to the player. This should be most objects since the player is the
+     * center of attention.
+     *
+     * @param graphics The graphics
+     * @param sprite The sprite being rendered
+     * @param x The absolute X location, the relative coordinate will be calculated within this method
+     * @param y The absolute Y location, the relative coordinate will be calculated within this method
+     * @param renderWidth The width of the render
+     * @param renderHeight The height of the render
+     * @param angle The angle of the render
+     * @param playerX X position the main player is at
+     * @param playerY Y position the main player is at
+     * @param skipForceRotate Skip the step where the client forcefully rotates object to fit sprite specs
+     */
+    private void renderObjectRelativeToMainPlayer(
         Graphics graphics, BufferedImage sprite,
         long x, long y, int renderWidth, int renderHeight, double angle,
-        long playerX, long playerY
+        long playerX, long playerY, boolean skipForceRotate
     ) {
         final int xOffset = (int)(x - playerX);
         final int yOffset = (int)(y - playerY);
 
         final AffineTransform transform = new AffineTransform();
         transform.translate(this.width / 2 + xOffset, this.height / 2 - yOffset);
-        transform.rotate((angle * -1) + Math.PI / 2);
+
+        double spriteFitOffset = Math.PI / 2;
+        if (skipForceRotate) {
+            spriteFitOffset = 0;
+        }
+
+        transform.rotate((angle * -1) + spriteFitOffset);
         transform.translate(-(renderWidth / 2), -(renderHeight / 2));
 
         ((Graphics2D)graphics).drawImage(sprite, transform, this);
