@@ -1,6 +1,6 @@
 package com.andronikus.gameclient.ui.render.portal;
 
-import com.andronikus.gameclient.ui.render.SpriteSheet;
+import com.andronikus.animation4j.spritesheet.SpriteSheet;
 
 import java.awt.image.BufferedImage;
 

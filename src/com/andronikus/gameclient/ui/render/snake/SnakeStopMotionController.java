@@ -1,15 +1,16 @@
 package com.andronikus.gameclient.ui.render.snake;
 
+import com.andronikus.animation4j.stopmotion.StopMotionController;
+import com.andronikus.animation4j.stopmotion.StopMotionState;
+import com.andronikus.game.model.server.GameState;
 import com.andronikus.game.model.server.Snake;
-import com.andronikus.gameclient.ui.render.animation.AnimationController;
-import com.andronikus.gameclient.ui.render.animation.AnimationState;
 
 /**
  * Animation controller for a snake.
  *
  * @author Andronikus
  */
-public class SnakeAnimationController extends AnimationController<Snake, SnakeSpriteSheet> {
+public class SnakeStopMotionController extends StopMotionController<GameState, Snake, SnakeSpriteSheet> {
 
     private final long id;
 
@@ -18,7 +19,7 @@ public class SnakeAnimationController extends AnimationController<Snake, SnakeSp
      *
      * @param snake The snake being animated
      */
-    public SnakeAnimationController(Snake snake) {
+    public SnakeStopMotionController(Snake snake) {
         super(new SnakeSpriteSheet());
         this.id = snake.getId();
     }
@@ -27,22 +28,22 @@ public class SnakeAnimationController extends AnimationController<Snake, SnakeSp
      * {@inheritDoc}
      */
     @Override
-    protected AnimationState<Snake, SnakeSpriteSheet> buildInitialStatesAndTransitions() {
-        final AnimationState<Snake, SnakeSpriteSheet> idleState = new AnimationState<>(this)
+    protected StopMotionState<GameState, Snake, SnakeSpriteSheet> buildInitialStatesAndTransitions() {
+        final StopMotionState<GameState, Snake, SnakeSpriteSheet> idleState = new StopMotionState<>(this)
             .addFrame(6L, SnakeSpriteSheet::getIdleSprite)
             .addFrame(6L, SnakeSpriteSheet::getIdleSprite)
             .addFrame(6L, SnakeSpriteSheet::getIdleSprite)
             .addFrame(6L, SnakeSpriteSheet::getIdleSprite)
             .addFrame(6L, SnakeSpriteSheet::getIdleSprite);
 
-        final AnimationState<Snake, SnakeSpriteSheet> chasingState = idleState.createTransitionState((gameState, snake) -> snake.isChasing())
+        final StopMotionState<GameState, Snake, SnakeSpriteSheet> chasingState = idleState.createTransitionState((gameState, snake) -> snake.isChasing())
             .addFrame(3L, SnakeSpriteSheet::getChasingSprite)
             .addFrame(3L, SnakeSpriteSheet::getChasingSprite)
             .addFrame(3L, SnakeSpriteSheet::getChasingSprite)
             .addFrame(3L, SnakeSpriteSheet::getChasingSprite)
             .addFrame(3L, SnakeSpriteSheet::getChasingSprite);
 
-        final AnimationState<Snake, SnakeSpriteSheet> dyingState = chasingState.createTransitionState((gameState, snake) -> snake.getHealth() <= 0)
+        final StopMotionState<GameState, Snake, SnakeSpriteSheet> dyingState = chasingState.createTransitionState((gameState, snake) -> snake.getHealth() <= 0)
             .addFrame(5L, SnakeSpriteSheet::getDyingSprite)
             .addFrame(7L, SnakeSpriteSheet::getDyingSprite)
             .addFrame(9L, SnakeSpriteSheet::getDyingSprite)
@@ -58,7 +59,7 @@ public class SnakeAnimationController extends AnimationController<Snake, SnakeSp
      * {@inheritDoc}
      */
     @Override
-    public boolean checkIfObjectIsAnimatedEntity(Snake object) {
+    public boolean checkIfObjectIsRoot(Snake object) {
         return id == object.getId();
     }
 }

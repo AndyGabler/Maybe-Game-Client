@@ -1,15 +1,16 @@
 package com.andronikus.gameclient.ui.render.portal;
 
+import com.andronikus.animation4j.stopmotion.StopMotionController;
+import com.andronikus.animation4j.stopmotion.StopMotionState;
+import com.andronikus.game.model.server.GameState;
 import com.andronikus.game.model.server.Portal;
-import com.andronikus.gameclient.ui.render.animation.AnimationController;
-import com.andronikus.gameclient.ui.render.animation.AnimationState;
 
 /**
  * Animation controller for a portal.
  *
  * @author Andronikus
  */
-public class PortalAnimationController extends AnimationController<Portal, PortalSpriteSheet> {
+public class PortalStopMotionController extends StopMotionController<GameState, Portal, PortalSpriteSheet> {
 
     private final long id;
 
@@ -18,7 +19,7 @@ public class PortalAnimationController extends AnimationController<Portal, Porta
      *
      * @param portal Portal being animated
      */
-    public PortalAnimationController(Portal portal) {
+    public PortalStopMotionController(Portal portal) {
         super(new PortalSpriteSheet());
         this.id = portal.getId();
     }
@@ -27,9 +28,8 @@ public class PortalAnimationController extends AnimationController<Portal, Porta
      * {@inheritDoc}
      */
     @Override
-    protected AnimationState<Portal, PortalSpriteSheet> buildInitialStatesAndTransitions() {
-        // TODO
-        final AnimationState<Portal, PortalSpriteSheet> idleState = new AnimationState<>(this)
+    protected StopMotionState<GameState, Portal, PortalSpriteSheet> buildInitialStatesAndTransitions() {
+        final StopMotionState<GameState, Portal, PortalSpriteSheet> idleState = new StopMotionState<>(this)
             .addFrame(3L, PortalSpriteSheet::getIdleSprite)
             .addFrame(3L, PortalSpriteSheet::getIdleSprite)
             .addFrame(3L, PortalSpriteSheet::getIdleSprite)
@@ -54,7 +54,7 @@ public class PortalAnimationController extends AnimationController<Portal, Porta
      * {@inheritDoc}
      */
     @Override
-    public boolean checkIfObjectIsAnimatedEntity(Portal object) {
+    public boolean checkIfObjectIsRoot(Portal object) {
         return object.getId() == id;
     }
 }

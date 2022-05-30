@@ -7,8 +7,8 @@ import com.andronikus.gameclient.client.GameClientStartException;
 import com.andronikus.gameclient.engine.IClientInputSupplier;
 import com.andronikus.gameclient.engine.IGameStateRenderer;
 import com.andronikus.gameclient.engine.IRendererPresetup;
-import com.gabler.client.ClientStartException;
 import com.andronikus.gameclient.ui.GameWindow;
+import com.gabler.client.ClientStartException;
 import com.google.gson.Gson;
 
 import java.io.IOException;

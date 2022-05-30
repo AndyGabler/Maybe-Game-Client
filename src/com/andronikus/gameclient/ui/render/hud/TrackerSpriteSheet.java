@@ -1,7 +1,7 @@
 package com.andronikus.gameclient.ui.render.hud;
 
 import com.andronikus.game.model.server.PlayerColor;
-import com.andronikus.gameclient.ui.render.SpriteSheet;
+import com.andronikus.animation4j.spritesheet.SpriteSheet;
 import java.awt.image.BufferedImage;
 
 /**

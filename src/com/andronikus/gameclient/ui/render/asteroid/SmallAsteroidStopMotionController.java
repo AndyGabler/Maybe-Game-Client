@@ -1,15 +1,16 @@
 package com.andronikus.gameclient.ui.render.asteroid;
 
+import com.andronikus.animation4j.stopmotion.StopMotionController;
+import com.andronikus.animation4j.stopmotion.StopMotionState;
 import com.andronikus.game.model.server.Asteroid;
-import com.andronikus.gameclient.ui.render.animation.AnimationController;
-import com.andronikus.gameclient.ui.render.animation.AnimationState;
+import com.andronikus.game.model.server.GameState;
 
 /**
  * Animation controller for a small asteroid.
  *
  * @author Andronikus
  */
-public class SmallAsteroidAnimationController extends AnimationController<Asteroid, SmallAsteroidSpriteSheet> {
+public class SmallAsteroidStopMotionController extends StopMotionController<GameState, Asteroid, SmallAsteroidSpriteSheet> {
 
     private final long id;
 
@@ -18,7 +19,7 @@ public class SmallAsteroidAnimationController extends AnimationController<Astero
      *
      * @param asteroid The asteroid being animated
      */
-    public SmallAsteroidAnimationController(Asteroid asteroid) {
+    public SmallAsteroidStopMotionController(Asteroid asteroid) {
         super(new SmallAsteroidSpriteSheet());
         this.id = asteroid.getId();
     }
@@ -27,12 +28,12 @@ public class SmallAsteroidAnimationController extends AnimationController<Astero
      * {@inheritDoc}
      */
     @Override
-    protected AnimationState<Asteroid, SmallAsteroidSpriteSheet> buildInitialStatesAndTransitions() {
-        final AnimationState<Asteroid, SmallAsteroidSpriteSheet> neutralState = new AnimationState<>(this)
+    protected StopMotionState<GameState, Asteroid, SmallAsteroidSpriteSheet> buildInitialStatesAndTransitions() {
+        final StopMotionState<GameState, Asteroid, SmallAsteroidSpriteSheet> neutralState = new StopMotionState<>(this)
             .addFrame(1L, (spriteSheet, counter) -> spriteSheet.getAsteroidSprite())
             .addFrame(null, (spriteSheet, counter) -> spriteSheet.getAsteroidSprite());
 
-        final AnimationState<Asteroid, SmallAsteroidSpriteSheet> crackingState = neutralState
+        final StopMotionState<GameState, Asteroid, SmallAsteroidSpriteSheet> crackingState = neutralState
             .createTransitionState((gameState, asteroid) -> asteroid.getDurability() <= 0);
 
         crackingState
@@ -48,7 +49,7 @@ public class SmallAsteroidAnimationController extends AnimationController<Astero
      * {@inheritDoc}
      */
     @Override
-    public boolean checkIfObjectIsAnimatedEntity(Asteroid asteroid) {
+    public boolean checkIfObjectIsRoot(Asteroid asteroid) {
         return asteroid.getId() == id;
     }
 }

@@ -12,15 +12,15 @@ import com.andronikus.gameclient.engine.IClientInputSupplier;
 import com.andronikus.gameclient.engine.IGameStateRenderer;
 import com.andronikus.gameclient.engine.IRendererPresetup;
 import com.andronikus.gameclient.ui.keyboard.KeyBoardListener;
-import com.andronikus.gameclient.ui.render.asteroid.LargeAsteroidAnimationController;
-import com.andronikus.gameclient.ui.render.asteroid.SmallAsteroidAnimationController;
-import com.andronikus.gameclient.ui.render.blackhole.MicroBlackHoleAnimationController;
+import com.andronikus.gameclient.ui.render.asteroid.LargeAsteroidStopMotionController;
+import com.andronikus.gameclient.ui.render.asteroid.SmallAsteroidStopMotionController;
+import com.andronikus.gameclient.ui.render.blackhole.MicroBlackHoleStopMotionController;
 import com.andronikus.gameclient.ui.render.hud.HudRenderer;
 import com.andronikus.gameclient.ui.render.hud.TrackerSpriteSheet;
 import com.andronikus.gameclient.ui.render.laser.LaserAnimationController;
-import com.andronikus.gameclient.ui.render.player.PlayerAnimationController;
-import com.andronikus.gameclient.ui.render.portal.PortalAnimationController;
-import com.andronikus.gameclient.ui.render.snake.SnakeAnimationController;
+import com.andronikus.gameclient.ui.render.player.PlayerStopMotionController;
+import com.andronikus.gameclient.ui.render.portal.PortalStopMotionController;
+import com.andronikus.gameclient.ui.render.snake.SnakeStopMotionController;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -68,14 +68,14 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
     private static final int SNAKE_HEIGHT = 64;
     private static final int PORTAL_SIZE = 64;
 
-    private PlayerAnimationController mainPlayerAnimationController = null;
-    private final List<PlayerAnimationController> playerAnimationControllers = new ArrayList<>();
+    private PlayerStopMotionController mainPlayerStopMotionController = null;
+    private final List<PlayerStopMotionController> playerStopMotionControllers = new ArrayList<>();
     private final List<LaserAnimationController> laserAnimationControllers = new ArrayList<>();
-    private final List<SmallAsteroidAnimationController> smallAsteroidAnimationControllers = new ArrayList<>();
-    private final List<LargeAsteroidAnimationController> largeAsteroidAnimationControllers = new ArrayList<>();
-    private final List<SnakeAnimationController> snakeAnimationControllers = new ArrayList<>();
-    private final List<PortalAnimationController> portalAnimationControllers = new ArrayList<>();
-    private final List<MicroBlackHoleAnimationController> blackHoleAnimationControllers = new ArrayList<>();
+    private final List<SmallAsteroidStopMotionController> smallAsteroidStopMotionControllers = new ArrayList<>();
+    private final List<LargeAsteroidStopMotionController> largeAsteroidStopMotionControllers = new ArrayList<>();
+    private final List<SnakeStopMotionController> snakeStopMotionControllers = new ArrayList<>();
+    private final List<PortalStopMotionController> portalStopMotionControllers = new ArrayList<>();
+    private final List<MicroBlackHoleStopMotionController> blackHoleStopMotionControllers = new ArrayList<>();
 
     private final HudRenderer hudRenderer = new HudRenderer();
     private final TrackerSpriteSheet trackerSpriteSheet = new TrackerSpriteSheet();
@@ -179,11 +179,11 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
         // Render players
         state.getPlayers().forEach(playerToRender -> {
             if (playerToRender == player) {
-                if (mainPlayerAnimationController == null) {
-                    mainPlayerAnimationController = new PlayerAnimationController(playerToRender);
+                if (mainPlayerStopMotionController == null) {
+                    mainPlayerStopMotionController = new PlayerStopMotionController(playerToRender);
                 }
 
-                final BufferedImage sprite = mainPlayerAnimationController.nextSprite(state, playerToRender);
+                final BufferedImage sprite = mainPlayerStopMotionController.nextSprite(state, playerToRender);
 
                 final AffineTransform transform = new AffineTransform();
                 transform.translate(width / 2, height / 2);
@@ -405,14 +405,14 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
      * @param snake The snake
      * @return The snake's animation controller, whether newly created or old
      */
-    private SnakeAnimationController getOrCreateAnimationControllerForSnake(Snake snake) {
-        return snakeAnimationControllers
+    private SnakeStopMotionController getOrCreateAnimationControllerForSnake(Snake snake) {
+        return snakeStopMotionControllers
             .stream()
-            .filter(controller -> controller.checkIfObjectIsAnimatedEntity(snake))
+            .filter(controller -> controller.checkIfObjectIsRoot(snake))
             .findFirst()
             .orElseGet(() -> {
-                final SnakeAnimationController newController = new SnakeAnimationController(snake);
-                snakeAnimationControllers.add(newController);
+                final SnakeStopMotionController newController = new SnakeStopMotionController(snake);
+                snakeStopMotionControllers.add(newController);
                 return newController;
             });
     }
@@ -423,14 +423,14 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
      * @param player The player
      * @return The player's animation controller, whether newly created or old
      */
-    private PlayerAnimationController getOrCreateAnimationControllerForPlayer(Player player) {
-        return playerAnimationControllers
+    private PlayerStopMotionController getOrCreateAnimationControllerForPlayer(Player player) {
+        return playerStopMotionControllers
             .stream()
-            .filter(controller -> controller.checkIfObjectIsAnimatedEntity(player))
+            .filter(controller -> controller.checkIfObjectIsRoot(player))
             .findFirst()
             .orElseGet(() -> {
-                final PlayerAnimationController newController = new PlayerAnimationController(player);
-                playerAnimationControllers.add(newController);
+                final PlayerStopMotionController newController = new PlayerStopMotionController(player);
+                playerStopMotionControllers.add(newController);
                 return newController;
             });
     }
@@ -444,7 +444,7 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
     private LaserAnimationController getOrCreateAnimationControllerForLaser(Laser laser) {
         return laserAnimationControllers
             .stream()
-            .filter(controller -> controller.checkIfObjectIsAnimatedEntity(laser))
+            .filter(controller -> controller.checkIfObjectIsRoot(laser))
             .findFirst()
             .orElseGet(() -> {
                 final LaserAnimationController newController = new LaserAnimationController(laser);
@@ -459,14 +459,14 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
      * @param asteroid The asteroid
      * @return The asteroid's animation controller, whether newly created or old
      */
-    private SmallAsteroidAnimationController getOrCreateAnimationControllerForSmallAsteroid(Asteroid asteroid) {
-        return smallAsteroidAnimationControllers
+    private SmallAsteroidStopMotionController getOrCreateAnimationControllerForSmallAsteroid(Asteroid asteroid) {
+        return smallAsteroidStopMotionControllers
             .stream()
-            .filter(controller -> controller.checkIfObjectIsAnimatedEntity(asteroid))
+            .filter(controller -> controller.checkIfObjectIsRoot(asteroid))
             .findFirst()
             .orElseGet(() -> {
-                final SmallAsteroidAnimationController newController = new SmallAsteroidAnimationController(asteroid);
-                smallAsteroidAnimationControllers.add(newController);
+                final SmallAsteroidStopMotionController newController = new SmallAsteroidStopMotionController(asteroid);
+                smallAsteroidStopMotionControllers.add(newController);
                 return newController;
             });
     }
@@ -477,14 +477,14 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
      * @param asteroid The asteroid
      * @return The asteroid's animation controller, whether newly created or old
      */
-    private LargeAsteroidAnimationController getOrCreateAnimationControllerForLargeAsteroid(Asteroid asteroid) {
-        return largeAsteroidAnimationControllers
+    private LargeAsteroidStopMotionController getOrCreateAnimationControllerForLargeAsteroid(Asteroid asteroid) {
+        return largeAsteroidStopMotionControllers
             .stream()
-            .filter(controller -> controller.checkIfObjectIsAnimatedEntity(asteroid))
+            .filter(controller -> controller.checkIfObjectIsRoot(asteroid))
             .findFirst()
             .orElseGet(() -> {
-                final LargeAsteroidAnimationController newController = new LargeAsteroidAnimationController(asteroid);
-                largeAsteroidAnimationControllers.add(newController);
+                final LargeAsteroidStopMotionController newController = new LargeAsteroidStopMotionController(asteroid);
+                largeAsteroidStopMotionControllers.add(newController);
                 return newController;
             });
     }
@@ -495,14 +495,14 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
      * @param blackHole The black hole
      * @return The black hole's animation controller, whether newly created or old
      */
-    private MicroBlackHoleAnimationController getOrCreateAnimationControllerForBlackHole(MicroBlackHole blackHole) {
-        return blackHoleAnimationControllers
+    private MicroBlackHoleStopMotionController getOrCreateAnimationControllerForBlackHole(MicroBlackHole blackHole) {
+        return blackHoleStopMotionControllers
             .stream()
-            .filter(controller -> controller.checkIfObjectIsAnimatedEntity(blackHole))
+            .filter(controller -> controller.checkIfObjectIsRoot(blackHole))
             .findFirst()
             .orElseGet(() -> {
-                final MicroBlackHoleAnimationController newController = new MicroBlackHoleAnimationController(blackHole);
-                blackHoleAnimationControllers.add(newController);
+                final MicroBlackHoleStopMotionController newController = new MicroBlackHoleStopMotionController(blackHole);
+                blackHoleStopMotionControllers.add(newController);
                 return newController;
             });
     }
@@ -513,14 +513,14 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
      * @param portal The portal
      * @return The portal's animation controller, whether newly created or old
      */
-    private PortalAnimationController getOrCreateAnimationControllerForPortal(Portal portal) {
-        return portalAnimationControllers
+    private PortalStopMotionController getOrCreateAnimationControllerForPortal(Portal portal) {
+        return portalStopMotionControllers
             .stream()
-            .filter(controller -> controller.checkIfObjectIsAnimatedEntity(portal))
+            .filter(controller -> controller.checkIfObjectIsRoot(portal))
             .findFirst()
             .orElseGet(() -> {
-                final PortalAnimationController newController = new PortalAnimationController(portal);
-                portalAnimationControllers.add(newController);
+                final PortalStopMotionController newController = new PortalStopMotionController(portal);
+                portalStopMotionControllers.add(newController);
                 return newController;
             });
     }

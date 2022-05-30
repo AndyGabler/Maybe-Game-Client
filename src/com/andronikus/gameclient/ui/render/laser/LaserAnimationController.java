@@ -1,15 +1,16 @@
 package com.andronikus.gameclient.ui.render.laser;
 
+import com.andronikus.animation4j.stopmotion.StopMotionController;
+import com.andronikus.animation4j.stopmotion.StopMotionState;
+import com.andronikus.game.model.server.GameState;
 import com.andronikus.game.model.server.Laser;
-import com.andronikus.gameclient.ui.render.animation.AnimationController;
-import com.andronikus.gameclient.ui.render.animation.AnimationState;
 
 /**
  * Animation controller for a laser.
  *
  * @author Andronikus
  */
-public class LaserAnimationController extends AnimationController<Laser, LaserSpriteSheet> {
+public class LaserAnimationController extends StopMotionController<GameState, Laser, LaserSpriteSheet> {
 
     private final long animatedLaserId;
 
@@ -28,14 +29,14 @@ public class LaserAnimationController extends AnimationController<Laser, LaserSp
      * {@inheritDoc}
      */
     @Override
-    protected AnimationState<Laser, LaserSpriteSheet> buildInitialStatesAndTransitions() {
-        final AnimationState<Laser, LaserSpriteSheet> travelingState = new AnimationState<>(this)
+    protected StopMotionState<GameState, Laser, LaserSpriteSheet> buildInitialStatesAndTransitions() {
+        final StopMotionState<GameState, Laser, LaserSpriteSheet> travelingState = new StopMotionState<>(this)
             .addFrame((long) 5, LaserSpriteSheet::getTravelingSprite)
             .addFrame((long) 6, LaserSpriteSheet::getTravelingSprite)
             .addFrame((long) 7, LaserSpriteSheet::getTravelingSprite)
             .addFrame((long) 6, LaserSpriteSheet::getTravelingSprite);
 
-        final AnimationState<Laser, LaserSpriteSheet> hitState =
+        final StopMotionState<GameState, Laser, LaserSpriteSheet> hitState =
             travelingState.createTransitionState(((gameState, laser) -> laser.getXVelocity() == 0 && laser.getYVelocity() == 0));
         hitState
             .addFrame((long) 3, LaserSpriteSheet::getHitSprite)
@@ -50,7 +51,7 @@ public class LaserAnimationController extends AnimationController<Laser, LaserSp
      * {@inheritDoc}
      */
     @Override
-    public boolean checkIfObjectIsAnimatedEntity(Laser laser) {
+    public boolean checkIfObjectIsRoot(Laser laser) {
         return laser.getId() == animatedLaserId;
     }
 }

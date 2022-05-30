@@ -1,15 +1,16 @@
 package com.andronikus.gameclient.ui.render.player;
 
+import com.andronikus.animation4j.stopmotion.StopMotionController;
+import com.andronikus.animation4j.stopmotion.StopMotionState;
+import com.andronikus.game.model.server.GameState;
 import com.andronikus.game.model.server.Player;
-import com.andronikus.gameclient.ui.render.animation.AnimationState;
-import com.andronikus.gameclient.ui.render.animation.AnimationController;
 
 /**
  * Animation controller for a player.
  *
  * @author Andronikus
  */
-public class PlayerAnimationController extends AnimationController<Player, PlayerSpriteSheet> {
+public class PlayerStopMotionController extends StopMotionController<GameState, Player, PlayerSpriteSheet> {
 
     private final String sessionId;
 
@@ -18,7 +19,7 @@ public class PlayerAnimationController extends AnimationController<Player, Playe
      *
      * @param player The player being animated
      */
-    public PlayerAnimationController(Player player) {
+    public PlayerStopMotionController(Player player) {
         super(new PlayerSpriteSheet());
 
         // Can't store player since it's reserialized every gamestate update. So store the
@@ -29,8 +30,8 @@ public class PlayerAnimationController extends AnimationController<Player, Playe
      * {@inheritDoc}
      */
     @Override
-    protected AnimationState<Player, PlayerSpriteSheet> buildInitialStatesAndTransitions() {
-        final AnimationState<Player, PlayerSpriteSheet> idleState = new AnimationState<>(this);
+    protected StopMotionState<GameState, Player, PlayerSpriteSheet> buildInitialStatesAndTransitions() {
+        final StopMotionState<GameState, Player, PlayerSpriteSheet> idleState = new StopMotionState<>(this);
 
         idleState
             .addFrame((long)12, PlayerSpriteSheet::getIdleSprite)
@@ -38,7 +39,7 @@ public class PlayerAnimationController extends AnimationController<Player, Playe
             .addFrame((long)12, PlayerSpriteSheet::getIdleSprite)
             .addFrame((long)12, PlayerSpriteSheet::getIdleSprite);
 
-        final AnimationState<Player, PlayerSpriteSheet> thrustingState = idleState.createTransitionState((gameState, player) -> player.isThrusting() && !player.isBoosting())
+        final StopMotionState<GameState, Player, PlayerSpriteSheet> thrustingState = idleState.createTransitionState((gameState, player) -> player.isThrusting() && !player.isBoosting())
             .addFrame((long)8, PlayerSpriteSheet::getThrustingSprite)
             .addFrame((long)8, PlayerSpriteSheet::getThrustingSprite)
             .addFrame((long)8, PlayerSpriteSheet::getThrustingSprite)
@@ -47,7 +48,7 @@ public class PlayerAnimationController extends AnimationController<Player, Playe
 
         thrustingState.createTransition((gameState, player) -> !player.isThrusting() && !player.isBoosting(), idleState);
 
-        final AnimationState<Player, PlayerSpriteSheet> boostingState = idleState.createTransitionState((gameState, player) -> player.isBoosting())
+        final StopMotionState<GameState, Player, PlayerSpriteSheet> boostingState = idleState.createTransitionState((gameState, player) -> player.isBoosting())
             .addFrame((long)8, PlayerSpriteSheet::getBoostingSprite)
             .addFrame((long)8, PlayerSpriteSheet::getBoostingSprite)
             .addFrame((long)8, PlayerSpriteSheet::getBoostingSprite)
@@ -60,7 +61,7 @@ public class PlayerAnimationController extends AnimationController<Player, Playe
         boostingState.createTransition((gameState, player) -> !player.isBoosting() && player.isThrusting(), thrustingState);
         boostingState.createTransition((gameState, player) -> !player.isBoosting() && !player.isThrusting(), idleState);
 
-        final AnimationState<Player, PlayerSpriteSheet> deathState = idleState.createTransitionState(((gameState, player) -> player.isDead()))
+        final StopMotionState<GameState, Player, PlayerSpriteSheet> deathState = idleState.createTransitionState(((gameState, player) -> player.isDead()))
             .addFrame((long)2, PlayerSpriteSheet::getDeathSprite)
             .addFrame((long)2, PlayerSpriteSheet::getDeathSprite)
             .addFrame((long)3, PlayerSpriteSheet::getDeathSprite)
@@ -75,7 +76,7 @@ public class PlayerAnimationController extends AnimationController<Player, Playe
         thrustingState.createTransition((gameState, player) -> player.isDead(), deathState);
         boostingState.createTransition((gameState, player) -> player.isDead(), deathState);
 
-        final AnimationState<Player, PlayerSpriteSheet> warpingState = idleState.createTransitionState((gameState, player) -> player.getCollidedPortalId() != null)
+        final StopMotionState<GameState, Player, PlayerSpriteSheet> warpingState = idleState.createTransitionState((gameState, player) -> player.getCollidedPortalId() != null)
             .addFrame(5L, PlayerSpriteSheet::getWarpingSprite)
             .addFrame(4L, PlayerSpriteSheet::getWarpingSprite)
             .addFrame(3L, PlayerSpriteSheet::getWarpingSprite)
@@ -84,7 +85,7 @@ public class PlayerAnimationController extends AnimationController<Player, Playe
         boostingState.createTransition((gameState, player) -> player.getCollidedPortalId() != null, warpingState);
         thrustingState.createTransition((gameState, player) -> player.getCollidedPortalId() != null, warpingState);
 
-        final AnimationState<Player, PlayerSpriteSheet> reappearingState = warpingState.createTransitionState((gameState, player) -> player.isPerformedWarp() || player.getCollidedPortalId() == null)
+        final StopMotionState<GameState, Player, PlayerSpriteSheet> reappearingState = warpingState.createTransitionState((gameState, player) -> player.isPerformedWarp() || player.getCollidedPortalId() == null)
             .addFrame(6L, PlayerSpriteSheet::getReappearingSprite)
             .addFrame(3L, PlayerSpriteSheet::getReappearingSprite)
             .addFrame(4L, PlayerSpriteSheet::getReappearingSprite)
@@ -99,7 +100,7 @@ public class PlayerAnimationController extends AnimationController<Player, Playe
      * {@inheritDoc}
      */
     @Override
-    public boolean checkIfObjectIsAnimatedEntity(Player player) {
+    public boolean checkIfObjectIsRoot(Player player) {
         return player.getSessionId().equals(sessionId);
     }
 }

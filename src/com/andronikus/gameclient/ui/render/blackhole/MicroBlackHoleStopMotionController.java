@@ -1,15 +1,16 @@
 package com.andronikus.gameclient.ui.render.blackhole;
 
+import com.andronikus.animation4j.stopmotion.StopMotionController;
+import com.andronikus.animation4j.stopmotion.StopMotionState;
+import com.andronikus.game.model.server.GameState;
 import com.andronikus.game.model.server.MicroBlackHole;
-import com.andronikus.gameclient.ui.render.animation.AnimationController;
-import com.andronikus.gameclient.ui.render.animation.AnimationState;
 
 /**
  * Animation controller for a black hole.
  *
  * @author Andronikus
  */
-public class MicroBlackHoleAnimationController extends AnimationController<MicroBlackHole, MicroBlackHoleSpriteSheet> {
+public class MicroBlackHoleStopMotionController extends StopMotionController<GameState, MicroBlackHole, MicroBlackHoleSpriteSheet> {
 
     private final long id;
 
@@ -18,7 +19,7 @@ public class MicroBlackHoleAnimationController extends AnimationController<Micro
      *
      * @param blackHole Black hole being animated
      */
-    public MicroBlackHoleAnimationController(MicroBlackHole blackHole) {
+    public MicroBlackHoleStopMotionController(MicroBlackHole blackHole) {
         super(new MicroBlackHoleSpriteSheet());
         this.id = blackHole.getId();
     }
@@ -27,8 +28,8 @@ public class MicroBlackHoleAnimationController extends AnimationController<Micro
      * {@inheritDoc}
      */
     @Override
-    protected AnimationState<MicroBlackHole, MicroBlackHoleSpriteSheet> buildInitialStatesAndTransitions() {
-        final AnimationState<MicroBlackHole, MicroBlackHoleSpriteSheet> state = new AnimationState<>(this)
+    protected StopMotionState<GameState, MicroBlackHole, MicroBlackHoleSpriteSheet> buildInitialStatesAndTransitions() {
+        final StopMotionState<GameState, MicroBlackHole, MicroBlackHoleSpriteSheet> state = new StopMotionState<>(this)
             .addFrame(3L, MicroBlackHoleSpriteSheet::getSprite)
             .addFrame(2L, MicroBlackHoleSpriteSheet::getSprite)
             .addFrame(3L, MicroBlackHoleSpriteSheet::getSprite)
@@ -43,7 +44,7 @@ public class MicroBlackHoleAnimationController extends AnimationController<Micro
      * {@inheritDoc}
      */
     @Override
-    public boolean checkIfObjectIsAnimatedEntity(MicroBlackHole object) {
+    public boolean checkIfObjectIsRoot(MicroBlackHole object) {
         return object.getId() == id;
     }
 
