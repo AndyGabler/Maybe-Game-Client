@@ -23,4 +23,5 @@ public class GameState implements Serializable {
     private long nextLaserId = 0;
     private long nextSpawnId = 0;
     private IBorder border;
+    private boolean serverDebugMode;
 }
