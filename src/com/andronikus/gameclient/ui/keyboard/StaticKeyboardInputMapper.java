@@ -1,5 +1,10 @@
 package com.andronikus.gameclient.ui.keyboard;
 
+import com.andronikus.gameclient.ui.input.ClientInput;
+import com.andronikus.gameclient.ui.input.ClientInputType;
+import com.andronikus.gameclient.ui.input.IUserInput;
+import com.andronikus.gameclient.ui.input.ServerInput;
+
 import java.awt.event.KeyEvent;
 
 /**
@@ -13,21 +18,24 @@ public class StaticKeyboardInputMapper implements IKeyBoardInputMapper {
      * {@inheritDoc}
      */
     @Override
-    public String mapInput(KeyBoardPressType eventType, KeyboardPressLocation location, int keyCode) {
-        String inputCode = null;
+    public IUserInput mapInput(KeyBoardPressType eventType, KeyboardPressLocation location, int keyCode) {
+        IUserInput input = null;
 
         // TODO this will turn to spaghetti real fast, consider more dynamic mapping object?
         switch(eventType) {
             case RELEASED:
                 switch (keyCode) {
                     case KeyEvent.VK_Q:
-                        inputCode = "BOOSTEND";
+                        input = new ServerInput("BOOSTEND");
                         break;
                     case KeyEvent.VK_SPACE:
-                        inputCode = "SHOOT";
+                        input = new ServerInput("SHOOT");
                         break;
                     case KeyEvent.VK_W:
-                        inputCode = "THRUSTEND";
+                        input = new ServerInput("THRUSTEND");
+                        break;
+                    case KeyEvent.VK_ENTER:
+                        input = new ClientInput(ClientInputType.COMMAND_WINDOW_TOGGLE);
                         break;
                 }
                 break;
@@ -36,29 +44,29 @@ public class StaticKeyboardInputMapper implements IKeyBoardInputMapper {
             case PRESSED:
                 switch (keyCode) {
                     case KeyEvent.VK_Q:
-                        inputCode = "BOOST";
+                        input = new ServerInput("BOOST");
                         break;
                     case KeyEvent.VK_SHIFT:
                         if (location == KeyboardPressLocation.LEFT) {
-                            inputCode = "BREAK";
+                            input = new ServerInput("BREAK");
                         }
                         break;
                     case KeyEvent.VK_W:
-                        inputCode = "THRUST";
+                        input = new ServerInput("THRUST");
                         break;
                     case KeyEvent.VK_S:
-                        inputCode = "RTHRUST";
+                        input = new ServerInput("RTHRUST");
                         break;
                     case KeyEvent.VK_A:
-                        inputCode = "LROTATE";
+                        input = new ServerInput("LROTATE");
                         break;
                     case KeyEvent.VK_D:
-                        inputCode = "RROTATE";
+                        input = new ServerInput("RROTATE");
                         break;
                 }
                 break;
         }
 
-        return inputCode;
+        return input;
     }
 }

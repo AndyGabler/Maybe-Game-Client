@@ -12,7 +12,7 @@ public enum KeyboardPressLocation {
     RIGHT(KeyEvent.KEY_LOCATION_RIGHT),
     NUMPAD(KeyEvent.KEY_LOCATION_NUMPAD),
     STANDARD(KeyEvent.KEY_LOCATION_STANDARD),
-    UNKOWN(KeyEvent.KEY_LOCATION_UNKNOWN),
+    UNKNOWN(KeyEvent.KEY_LOCATION_UNKNOWN),
     NONE(null); // TODO see if location can ever be out of range
 
     private final Integer code;

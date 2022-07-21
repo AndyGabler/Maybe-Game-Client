@@ -11,6 +11,9 @@ import com.andronikus.game.model.server.Snake;
 import com.andronikus.gameclient.engine.IClientInputSupplier;
 import com.andronikus.gameclient.engine.IGameStateRenderer;
 import com.andronikus.gameclient.engine.IRendererPresetup;
+import com.andronikus.gameclient.ui.input.ClientInput;
+import com.andronikus.gameclient.ui.input.IUserInput;
+import com.andronikus.gameclient.ui.input.ServerInput;
 import com.andronikus.gameclient.ui.keyboard.KeyBoardListener;
 import com.andronikus.gameclient.ui.render.asteroid.LargeAsteroidStopMotionController;
 import com.andronikus.gameclient.ui.render.asteroid.SmallAsteroidStopMotionController;
@@ -28,9 +31,10 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Image;
-import java.awt.Graphics2D;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.Font;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
@@ -55,7 +59,7 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
     private volatile String sessionId;
     private final JFrame frame;
     private volatile GameState latestGameState = null;
-    private final ConcurrentInputManager inputManager;
+    private final ConcurrentInputManager serverInputManager;
 
     private final Image background;
     private static final int PLAYER_SIZE = 64;
@@ -67,6 +71,8 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
     private static final int SNAKE_WIDTH = 16;
     private static final int SNAKE_HEIGHT = 64;
     private static final int PORTAL_SIZE = 64;
+    private static final Color COMMAND_TEXT_COLOR = new Color(94, 222, 52);
+    private static final Font COMMAND_TEXT_FONT = new Font(Font.MONOSPACED, Font.BOLD, 24);
 
     private PlayerStopMotionController mainPlayerStopMotionController = null;
     private final List<PlayerStopMotionController> playerStopMotionControllers = new ArrayList<>();
@@ -80,6 +86,12 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
     private final HudRenderer hudRenderer = new HudRenderer();
     private final TrackerSpriteSheet trackerSpriteSheet = new TrackerSpriteSheet();
 
+    @Getter
+    private boolean commandMode;
+    private String commandBuffer = "";
+    private int commandCarrotTickCount = 0;
+    private boolean commandCarrotToggle = false;
+
     /**
      * Instantiate the graphical user interface for a game.
      */
@@ -90,7 +102,7 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
         this.addMouseListener(mouseListener);
         this.addMouseMotionListener(mouseListener);
 
-        final KeyBoardListener keyBoardListener = new KeyBoardListener(this);
+        KeyBoardListener keyBoardListener = new KeyBoardListener(this);
         this.addKeyListener(keyBoardListener);
         frame.addKeyListener(keyBoardListener);
         this.addComponentListener(new ResizeListener(this));
@@ -101,7 +113,7 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         background = ImagesUtil.getImage("background.png");
-        inputManager = new ConcurrentInputManager();
+        serverInputManager = new ConcurrentInputManager();
     }
 
     /**
@@ -264,6 +276,17 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
             graphics, player.getHealth(), player.getShieldCount(), player.getShieldRecharge(),
             player.getBoostingCharge(), player.getBoostingRecharge(), player.getLaserCharges(), this
         );
+        if (commandMode) {
+            commandCarrotTickCount = (commandCarrotTickCount + 1) % 13;
+            if (commandCarrotTickCount == 0) {
+                commandCarrotToggle = !commandCarrotToggle;
+            }
+            String carrot = commandCarrotToggle ? "|" : "";
+            graphics.setColor(COMMAND_TEXT_COLOR);
+            graphics.setFont(COMMAND_TEXT_FONT);
+            graphics.drawString("ENTER COMMAND:", 60, 15);
+            graphics.drawString(commandBuffer + carrot, 60, 33);
+        }
     }
 
     /**
@@ -555,8 +578,56 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
      *
      * @param input The input code
      */
-    public void addInput(String input) {
-        inputManager.addToQueue(input);
+    public void addInput(IUserInput input) {
+        if (input instanceof ServerInput) {
+            serverInputManager.addToQueue(((ServerInput) input).getCode());
+        } else {
+            handleClientInput((ClientInput) input);
+        }
+    }
+
+    /**
+     * Handle an input if it is intended for the Client, presumably, targeting state of the game window.
+     *
+     * @param clientInput The input
+     */
+    private void handleClientInput(ClientInput clientInput) {
+        switch (clientInput.getType()) {
+            case COMMAND_WINDOW_TOGGLE:
+                if (latestGameState != null && latestGameState.isServerDebugMode()) {
+                    commandBuffer = "";
+                    commandMode = true;
+                }
+                break;
+        }
+    }
+
+    /**
+     * Add a character to the command buffer.
+     *
+     * @param character The character
+     */
+    public void appendCommandBuffer(char character) {
+        commandBuffer += character;
+    }
+
+    /**
+     * Delete a character from the command buffer.
+     */
+    public void deleteCommandBufferCharacter() {
+        commandBuffer = commandBuffer.substring(0, commandBuffer.length() - 1);
+    }
+
+    /**
+     * Exit command mode.
+     *
+     * @param doCommand Whether or not the command as read on the buffer should be executed.
+     */
+    public void exitCommandMode(boolean doCommand) {
+        commandMode = false;
+        if (doCommand) {
+            //TODO
+        }
     }
 
     /**
@@ -576,6 +647,6 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
      */
     @Override
     public List<String> getAndClearInputs() {
-        return inputManager.getUnhandledCodes();
+        return serverInputManager.getUnhandledCodes();
     }
 }

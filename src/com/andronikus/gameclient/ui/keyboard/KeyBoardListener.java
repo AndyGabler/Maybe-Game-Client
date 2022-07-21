@@ -1,6 +1,7 @@
 package com.andronikus.gameclient.ui.keyboard;
 
 import com.andronikus.gameclient.ui.GameWindow;
+import com.andronikus.gameclient.ui.input.IUserInput;
 
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -67,9 +68,29 @@ public class KeyBoardListener implements KeyListener {
      * @param keyCode The key code
      */
     private void handleKeyPress(KeyBoardPressType eventType, int locationCode, int keyCode) {
-        final String inputCode = inputMapper.mapInput(eventType, KeyboardPressLocation.getLocationByCode(locationCode), keyCode);
-        if (inputCode != null) {
-            window.addInput(inputCode);
+        if (window.isCommandMode()) {
+            if (eventType == KeyBoardPressType.RELEASED) {
+                int input = keyCode;
+                if (
+                    (input >= KeyEvent.VK_A && input <= KeyEvent.VK_Z) ||
+                    (input >= KeyEvent.VK_0 && input <= KeyEvent.VK_9) ||
+                    (input >= KeyEvent.VK_NUMPAD0 && input <= KeyEvent.VK_NUMPAD9) ||
+                    input == KeyEvent.VK_SPACE
+                ) {
+                    window.appendCommandBuffer((char)input);
+                } else if (input == KeyEvent.VK_ENTER) {
+                    window.exitCommandMode(true);
+                } else if (input == KeyEvent.VK_ESCAPE) {
+                    window.exitCommandMode(false);
+                } else if (input == KeyEvent.VK_BACK_SPACE) {
+                    window.deleteCommandBufferCharacter();
+                }
+            }
+        } else {
+            final IUserInput inputCode = inputMapper.mapInput(eventType, KeyboardPressLocation.getLocationByCode(locationCode), keyCode);
+            if (inputCode != null) {
+                window.addInput(inputCode);
+            }
         }
     }
 }
