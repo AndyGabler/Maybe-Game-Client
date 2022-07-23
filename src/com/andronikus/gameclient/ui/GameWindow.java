@@ -87,8 +87,9 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
     private final TrackerSpriteSheet trackerSpriteSheet = new TrackerSpriteSheet();
 
     @Getter
-    private boolean commandMode;
-    private String commandBuffer = "";
+    private volatile boolean commandMode;
+    private volatile String commandBuffer = "";
+    private volatile boolean commandLocked = false;
     private int commandCarrotTickCount = 0;
     private boolean commandCarrotToggle = false;
 
@@ -594,7 +595,7 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
     private void handleClientInput(ClientInput clientInput) {
         switch (clientInput.getType()) {
             case COMMAND_WINDOW_TOGGLE:
-                if (latestGameState != null && latestGameState.isServerDebugMode()) {
+                if (latestGameState != null && latestGameState.isServerDebugMode() && !commandLocked) {
                     commandBuffer = "";
                     commandMode = true;
                 }
@@ -608,14 +609,18 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
      * @param character The character
      */
     public void appendCommandBuffer(char character) {
-        commandBuffer += character;
+        if (!commandLocked) {
+            commandBuffer += character;
+        }
     }
 
     /**
      * Delete a character from the command buffer.
      */
     public void deleteCommandBufferCharacter() {
-        commandBuffer = commandBuffer.substring(0, commandBuffer.length() - 1);
+        if (!commandLocked) {
+            commandBuffer = commandBuffer.substring(0, commandBuffer.length() - 1);
+        }
     }
 
     /**
@@ -626,7 +631,7 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
     public void exitCommandMode(boolean doCommand) {
         commandMode = false;
         if (doCommand) {
-            //TODO
+            commandLocked = true;
         }
     }
 
@@ -640,6 +645,19 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
 
         width = (int) frame.getSize().getWidth();
         height = (int) frame.getSize().getHeight();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getCommand() {
+        String command = null;
+        if (commandLocked) {
+            command = commandBuffer;
+            commandLocked = false;
+        }
+        return command;
     }
 
     /**

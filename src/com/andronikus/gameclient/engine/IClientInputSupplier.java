@@ -15,4 +15,11 @@ public interface IClientInputSupplier {
      * @return The inputs
      */
     List<String> getAndClearInputs();
+
+    /**
+     * Get the command that will be sent to the server.
+     *
+     * @return The command
+     */
+    String getCommand();
 }

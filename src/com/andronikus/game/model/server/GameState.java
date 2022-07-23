@@ -24,4 +24,10 @@ public class GameState implements Serializable {
     private long nextSpawnId = 0;
     private IBorder border;
     private boolean serverDebugMode;
+    private ArrayList<CommandAcknowledgement> commandAcknowledgements = new ArrayList<>();
+
+
+    // Control flags
+    private boolean movementEnabled = true;
+    private boolean collisionsEnabled = true;
 }

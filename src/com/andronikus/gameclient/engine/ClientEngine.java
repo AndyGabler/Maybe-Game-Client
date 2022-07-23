@@ -3,11 +3,13 @@ package com.andronikus.gameclient.engine;
 import com.andronikus.game.model.client.ClientRequest;
 import com.andronikus.game.model.server.GameState;
 import com.andronikus.gameclient.client.GameClient;
+import com.andronikus.gameclient.engine.command.ClientCommandManager;
 
 import javax.swing.Timer;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -28,6 +30,7 @@ public class ClientEngine implements ActionListener {
     private final IClientInputSupplier inputSupplier;
     private final IRendererPresetup setupOperations;
     private final Timer timer;
+    private ClientCommandManager commandManager = null;
 
     // Setter for whether or not this client has been acked by the server
     private volatile GameState latestGameState = null;
@@ -89,13 +92,26 @@ public class ClientEngine implements ActionListener {
         }
 
         final List<String> inputCodes = inputSupplier.getAndClearInputs();
-        if (inputCodes.size() > 0) {
+        final String commandCode = inputSupplier.getCommand();
+        if (inputCodes.size() > 0 || commandCode != null) {
             sequenceNumber = sequenceNumber + 1;
 
             final ClientRequest request = new ClientRequest();
             request.setSessionToken(client.getSessionSecret());
             request.setSequenceNumber(sequenceNumber);
             request.setInputCodes(inputCodes);
+
+            if (latestGameState != null && commandManager != null && latestGameState.isServerDebugMode()) {
+                if (commandCode != null) {
+                    commandManager.addCommand(commandCode);
+                }
+                commandManager.processGameState(latestGameState);
+                request.setClientCommands(commandManager.getUnackedCommands());
+                request.setCommandsToRemove(commandManager.getAckedCommands());
+            } else {
+                request.setClientCommands(Collections.emptyList());
+                request.setCommandsToRemove(Collections.emptyList());
+            }
 
             client.sendClientRequest(request);
         }
@@ -108,6 +124,7 @@ public class ClientEngine implements ActionListener {
      */
     public void takeGameState(GameState gameState) {
         latestGameState = gameState;
+        commandManager = new ClientCommandManager(client.getSessionId());
 
         // TODO mechanism for handling server rejecting the client
         if (!serverAckedClient &&

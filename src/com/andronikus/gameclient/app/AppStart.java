@@ -65,7 +65,17 @@ public class AppStart {
                 @Override
                 public void render() {}
             };
-            inputSupplier = ArrayList::new;
+            inputSupplier = new IClientInputSupplier() {
+                @Override
+                public List<String> getAndClearInputs() {
+                    return new ArrayList<>();
+                }
+
+                @Override
+                public String getCommand() {
+                    return null;
+                }
+            };
             presetupOperations = () -> System.out.println("Engine renderer started...");
         } else {
             throw new IllegalArgumentException("No renderer for render option " + renderMethod);
