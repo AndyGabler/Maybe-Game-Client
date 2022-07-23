@@ -618,7 +618,7 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
      * Delete a character from the command buffer.
      */
     public void deleteCommandBufferCharacter() {
-        if (!commandLocked) {
+        if (!commandLocked && commandBuffer.length() > 0) {
             commandBuffer = commandBuffer.substring(0, commandBuffer.length() - 1);
         }
     }

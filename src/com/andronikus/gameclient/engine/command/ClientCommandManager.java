@@ -52,7 +52,7 @@ public class ClientCommandManager {
      * @param gameState The game state
      */
     public void processGameState(GameState gameState) {
-        if (gameState == null || gameState.isServerDebugMode()) {
+        if (gameState == null || !gameState.isServerDebugMode()) {
             return;
         }
 

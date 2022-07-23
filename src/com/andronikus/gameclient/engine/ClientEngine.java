@@ -124,11 +124,11 @@ public class ClientEngine implements ActionListener {
      */
     public void takeGameState(GameState gameState) {
         latestGameState = gameState;
-        commandManager = new ClientCommandManager(client.getSessionId());
 
         // TODO mechanism for handling server rejecting the client
         if (!serverAckedClient &&
             gameState.getPlayers().stream().anyMatch(player -> player.getSessionId().equals(client.getSessionId()))) {
+            commandManager = new ClientCommandManager(client.getSessionId());
             serverAckedClient = true;
         }
 

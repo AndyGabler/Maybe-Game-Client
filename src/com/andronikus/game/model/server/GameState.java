@@ -28,6 +28,8 @@ public class GameState implements Serializable {
 
 
     // Control flags
-    private boolean movementEnabled = true;
-    private boolean collisionsEnabled = true;
+    private boolean tickEnabled;
+    private boolean collisionsEnabled;
+    private boolean movementEnabled;
+    private boolean spawningEnabled;
 }
