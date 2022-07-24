@@ -73,6 +73,9 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
     private static final int PORTAL_SIZE = 64;
     private static final Color COMMAND_TEXT_COLOR = new Color(94, 222, 52);
     private static final Font COMMAND_TEXT_FONT = new Font(Font.MONOSPACED, Font.BOLD, 24);
+    private static final Color GAME_SETTING_OFF_TEXT_COLOR = new Color(238, 60, 60);
+    private static final Color GAME_SETTING_ON_TEXT_COLOR = new Color(80, 255, 113);
+    private static final Font GAME_SETTING_TEXT_FONT = new Font(Font.DIALOG, Font.PLAIN, 14);
 
     private PlayerStopMotionController mainPlayerStopMotionController = null;
     private final List<PlayerStopMotionController> playerStopMotionControllers = new ArrayList<>();
@@ -277,6 +280,7 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
             graphics, player.getHealth(), player.getShieldCount(), player.getShieldRecharge(),
             player.getBoostingCharge(), player.getBoostingRecharge(), player.getLaserCharges(), this
         );
+
         if (commandMode) {
             commandCarrotTickCount = (commandCarrotTickCount + 1) % 13;
             if (commandCarrotTickCount == 0) {
@@ -287,6 +291,25 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
             graphics.setFont(COMMAND_TEXT_FONT);
             graphics.drawString("ENTER COMMAND:", 60, 15);
             graphics.drawString(commandBuffer + carrot, 60, 33);
+        }
+
+        if (!latestGameState.isSpawningEnabled() ||
+            !latestGameState.isMovementEnabled() ||
+            !latestGameState.isCollisionsEnabled() ||
+            !latestGameState.isTickEnabled()) {
+            graphics.setFont(GAME_SETTING_TEXT_FONT);
+
+            graphics.setColor(latestGameState.isTickEnabled() ? GAME_SETTING_ON_TEXT_COLOR : GAME_SETTING_OFF_TEXT_COLOR);
+            graphics.drawString("Tick Enabled: " + latestGameState.isTickEnabled(), 14, height - 40);
+
+            graphics.setColor(latestGameState.isMovementEnabled() ? GAME_SETTING_ON_TEXT_COLOR : GAME_SETTING_OFF_TEXT_COLOR);
+            graphics.drawString("Movement Enabled: " + latestGameState.isMovementEnabled(), 14, height - 30);
+
+            graphics.setColor(latestGameState.isCollisionsEnabled() ? GAME_SETTING_ON_TEXT_COLOR : GAME_SETTING_OFF_TEXT_COLOR);
+            graphics.drawString("Collision Enabled: " + latestGameState.isCollisionsEnabled(), 14, height - 20);
+
+            graphics.setColor(latestGameState.isSpawningEnabled() ? GAME_SETTING_ON_TEXT_COLOR : GAME_SETTING_OFF_TEXT_COLOR);
+            graphics.drawString("Spawning Enabled: " + latestGameState.isSpawningEnabled(), 14, height - 10);
         }
     }
 

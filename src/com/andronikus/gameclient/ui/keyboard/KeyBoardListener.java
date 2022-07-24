@@ -75,7 +75,8 @@ public class KeyBoardListener implements KeyListener {
                     (input >= KeyEvent.VK_A && input <= KeyEvent.VK_Z) ||
                     (input >= KeyEvent.VK_0 && input <= KeyEvent.VK_9) ||
                     (input >= KeyEvent.VK_NUMPAD0 && input <= KeyEvent.VK_NUMPAD9) ||
-                    input == KeyEvent.VK_SPACE
+                    input == KeyEvent.VK_SPACE ||
+                    input == KeyEvent.VK_MINUS
                 ) {
                     window.appendCommandBuffer((char)input);
                 } else if (input == KeyEvent.VK_ENTER) {
