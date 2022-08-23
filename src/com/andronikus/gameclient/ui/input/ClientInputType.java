@@ -6,5 +6,6 @@ package com.andronikus.gameclient.ui.input;
  * @author Andronikus
  */
 public enum ClientInputType {
-    COMMAND_WINDOW_TOGGLE
+    COMMAND_WINDOW_TOGGLE,
+    DISPLAY_ADVANCED_HUD
 }

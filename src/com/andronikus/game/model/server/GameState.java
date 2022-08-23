@@ -13,7 +13,7 @@ import java.util.ArrayList;
 @Data
 public class GameState implements Serializable {
     private long version = -1;
-    private ArrayList<ICollideable> collideables = new ArrayList<>();
+    private ArrayList<IMoveable> collideables = new ArrayList<>();
     private ArrayList<Player> players = new ArrayList<>();
     private ArrayList<Laser> lasers = new ArrayList<>();
     private ArrayList<Asteroid> asteroids = new ArrayList<>();

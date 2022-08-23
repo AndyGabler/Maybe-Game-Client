@@ -8,7 +8,7 @@ import lombok.Data;
  * @author Andronikus
  */
 @Data
-public class Laser implements ICollideable {
+public class Laser implements IMoveable {
 
     private long x;
     private long y;
@@ -57,5 +57,40 @@ public class Laser implements ICollideable {
     @Override
     public double getTilt() {
         return angle;
+    }
+
+    @Override
+    public void setMoveableId(long id) {
+        this.id = id;
+    }
+
+    @Override
+    public void setXPosition(long x) {
+        this.x = x;
+    }
+
+    @Override
+    public void setYPosition(long y) {
+        this.y = y;
+    }
+
+    @Override
+    public void setXTickDelta(long xDelta) {
+        this.xVelocity = xDelta;
+    }
+
+    @Override
+    public void setYTickDelta(long yDelta) {
+        this.yVelocity = yDelta;
+    }
+
+    @Override
+    public void setDirection(double angle) {
+        this.angle = angle;
+    }
+
+    @Override
+    public void setDirectionTickDelta(double angle) {
+        // Do nothing
     }
 }
