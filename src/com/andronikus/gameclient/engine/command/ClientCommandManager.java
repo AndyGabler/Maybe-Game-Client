@@ -1,8 +1,8 @@
 package com.andronikus.gameclient.engine.command;
 
 import com.andronikus.game.model.client.ClientCommand;
-import com.andronikus.game.model.server.CommandAcknowledgement;
 import com.andronikus.game.model.server.GameState;
+import com.andronikus.game.model.server.debug.CommandAcknowledgement;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,7 +56,7 @@ public class ClientCommandManager {
             return;
         }
 
-        final List<CommandAcknowledgement> commandAcknowledgements = gameState.getCommandAcknowledgements()
+        final List<CommandAcknowledgement> commandAcknowledgements = gameState.getDebugSettings().getCommandAcknowledgements()
             .stream()
             .filter(commandAcknowledgement -> commandAcknowledgement.getSessionId().equalsIgnoreCase(clientId))
             .collect(Collectors.toList());

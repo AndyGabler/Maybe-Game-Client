@@ -17,6 +17,13 @@ public interface IMoveable extends Serializable {
     void setMoveableId(long id);
 
     /**
+     * Get ID of the moveable.
+     *
+     * @return id The moveable
+     */
+    long getMoveableId();
+
+    /**
      * Set X Position of the moveable.
      *
      * @param x The x
@@ -92,4 +99,11 @@ public interface IMoveable extends Serializable {
      * @return The tilt angle
      */
     double getTilt();
+
+    /**
+     * Get the moveable tag for type of moveable.
+     *
+     * @return The moveable tag
+     */
+    String moveableTag();
 }

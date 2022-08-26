@@ -37,6 +37,9 @@ public class StaticKeyboardInputMapper implements IKeyBoardInputMapper {
                     case KeyEvent.VK_ENTER:
                         input = new ClientInput(ClientInputType.COMMAND_WINDOW_TOGGLE);
                         break;
+                    case KeyEvent.VK_F1:
+                        input = new ClientInput(ClientInputType.SHOW_COLLISION_MARKERS);
+                        break;
                     case KeyEvent.VK_F3:
                         input = new ClientInput(ClientInputType.DISPLAY_ADVANCED_HUD);
                         break;

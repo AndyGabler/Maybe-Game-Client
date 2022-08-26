@@ -29,6 +29,7 @@ import lombok.Setter;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
@@ -99,6 +100,7 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
     private int commandCarrotTickCount = 0;
     private boolean commandCarrotToggle = false;
     private boolean advancedHudEnabled = false;
+    private boolean collisionWatch = false;
 
     /**
      * Instantiate the graphical user interface for a game.
@@ -173,7 +175,7 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
 
                 renderObjectRelativeToMainPlayer(
                     graphics, sprite, laser.getX(), laser.getY(),
-                    LASER_WIDTH, LASER_HEIGHT, laser.getAngle(), playerX, playerY, laser.getId()
+                    LASER_WIDTH, LASER_HEIGHT, laser.getAngle(), playerX, playerY, laser.getId(), laser.moveableTag()
                 );
             }
         });
@@ -183,7 +185,7 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
 
             renderObjectRelativeToMainPlayer(
                 graphics, sprite, blackHole.getX(), blackHole.getY(),
-                PORTAL_SIZE, PORTAL_SIZE, blackHole.getAngle(), playerX, playerY, blackHole.getId()
+                PORTAL_SIZE, PORTAL_SIZE, blackHole.getAngle(), playerX, playerY, blackHole.getId(), blackHole.moveableTag()
             );
         });
 
@@ -192,7 +194,7 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
 
             renderObjectRelativeToMainPlayer(
                 graphics, sprite, portal.getX(), portal.getY(),
-                PORTAL_SIZE, PORTAL_SIZE, portal.getAngle(), playerX, playerY, portal.getId()
+                PORTAL_SIZE, PORTAL_SIZE, portal.getAngle(), playerX, playerY, portal.getId(), portal.moveableTag()
             );
         });
 
@@ -211,12 +213,22 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
                 transform.translate(-PLAYER_SIZE / 2, -PLAYER_SIZE / 2);
 
                 ((Graphics2D)graphics).drawImage(sprite, transform, this);
+
+                if (collisionWatch) {
+                    graphics.setColor(Color.CYAN);
+                    graphics.drawRect(
+                        width / 2 - player.getBoxWidth() / 2,
+                        height / 2 - player.getBoxHeight() / 2,
+                        player.getBoxWidth(),
+                        player.getBoxHeight()
+                    );
+                }
             } else {
                 final BufferedImage sprite = getOrCreateAnimationControllerForPlayer(playerToRender).nextSprite(state, playerToRender);
 
                 renderObjectRelativeToMainPlayer(
                     graphics, sprite, playerToRender.getX(), playerToRender.getY(),
-                    PLAYER_SIZE, PLAYER_SIZE, playerToRender.getAngle(), playerX, playerY, null
+                    PLAYER_SIZE, PLAYER_SIZE, playerToRender.getAngle(), playerX, playerY, null, null
                 );
 
                 final BufferedImage tracker = trackerSpriteSheet.getTrackerSpriteForColor(playerToRender.getColor());
@@ -231,7 +243,7 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
                         // Render tracker for player that is within visible range
                         renderObjectRelativeToMainPlayer(
                             graphics, tracker, playerToRender.getX(), playerToRender.getY() + PLAYER_SIZE,
-                            PLAYER_SIZE / 2, PLAYER_SIZE / 2, Math.PI / 2 * 3, playerX, playerY, null
+                            PLAYER_SIZE / 2, PLAYER_SIZE / 2, Math.PI / 2 * 3, playerX, playerY, null, null
                         );
                     }
                 }
@@ -242,7 +254,7 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
         state.getSnakes().forEach(snake -> {
             final BufferedImage sprite = getOrCreateAnimationControllerForSnake(snake).nextSprite(state, snake);
             renderObjectRelativeToMainPlayer(
-                graphics, sprite, snake.getX(), snake.getY(), SNAKE_WIDTH, SNAKE_HEIGHT, snake.getAngle(), playerX, playerY, snake.getId()
+                graphics, sprite, snake.getX(), snake.getY(), SNAKE_WIDTH, SNAKE_HEIGHT, snake.getAngle(), playerX, playerY, snake.getId(), snake.moveableTag()
             );
         });
 
@@ -253,14 +265,14 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
 
                 renderObjectRelativeToMainPlayer(
                     graphics, sprite, asteroid.getX(), asteroid.getY(),
-                    SMALL_ASTEROID_SIZE, SMALL_ASTEROID_SIZE, asteroid.getAngle(), playerX, playerY, asteroid.getId()
+                    SMALL_ASTEROID_SIZE, SMALL_ASTEROID_SIZE, asteroid.getAngle(), playerX, playerY, asteroid.getId(), asteroid.moveableTag()
                 );
             } else {
                 final BufferedImage sprite = getOrCreateAnimationControllerForLargeAsteroid(asteroid).nextSprite(state, asteroid);
 
                 renderObjectRelativeToMainPlayer(
                     graphics, sprite, asteroid.getX(), asteroid.getY(),
-                    LARGE_ASTEROID_WIDTH, LARGE_ASTEROID_HEIGHT, asteroid.getAngle(), playerX, playerY, asteroid.getId(), true
+                    LARGE_ASTEROID_WIDTH, LARGE_ASTEROID_HEIGHT, asteroid.getAngle(), playerX, playerY, asteroid.getId(), asteroid.moveableTag(), true
                 );
             }
         });
@@ -272,7 +284,7 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
 
                 renderObjectRelativeToMainPlayer(
                     graphics, sprite, laser.getX(), laser.getY(),
-                    LASER_WIDTH, LASER_HEIGHT, laser.getAngle(), playerX, playerY, laser.getId()
+                    LASER_WIDTH, LASER_HEIGHT, laser.getAngle(), playerX, playerY, laser.getId(), laser.moveableTag()
                 );
             }
         });
@@ -405,13 +417,14 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
      * @param playerX X position the main player is at
      * @param playerY Y position the main player is at
      * @param serverId ID of the entity according to the connected server
+     * @param moveableTag Tag name of the type of moveable being rendered
      */
     private void renderObjectRelativeToMainPlayer(
             Graphics graphics, BufferedImage sprite,
             long x, long y, int renderWidth, int renderHeight, double angle,
-            long playerX, long playerY, Long serverId
+            long playerX, long playerY, Long serverId, String moveableTag
     ) {
-        renderObjectRelativeToMainPlayer(graphics, sprite, x, y, renderWidth, renderHeight, angle, playerX, playerY, serverId, false);
+        renderObjectRelativeToMainPlayer(graphics, sprite, x, y, renderWidth, renderHeight, angle, playerX, playerY, serverId, moveableTag, false);
     }
 
     /**
@@ -428,12 +441,13 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
      * @param playerX X position the main player is at
      * @param playerY Y position the main player is at
      * @param serverId ID of the entity according to the connected server
+     * @param moveableTag Tag name of the type of moveable being rendered
      * @param skipForceRotate Skip the step where the client forcefully rotates object to fit sprite specs
      */
     private void renderObjectRelativeToMainPlayer(
         Graphics graphics, BufferedImage sprite,
         long x, long y, int renderWidth, int renderHeight, double angle,
-        long playerX, long playerY, Long serverId,
+        long playerX, long playerY, Long serverId, String moveableTag,
         boolean skipForceRotate
     ) {
         final int xOffset = (int)(x - playerX);
@@ -455,7 +469,6 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
         ((Graphics2D)graphics).drawImage(sprite, transform, this);
 
         if (advancedHudEnabled) {
-            // TODO
             int hudY = drawingY;
             graphics.setColor(ADVANCED_HUD_TEXT_COLOR);
             graphics.setFont(ADVANCED_HUD_TEXT_FONT);
@@ -465,6 +478,14 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
             hudY += 30;
             String displayAngle = String.format("%.2f", Math.toDegrees(angle % (Math.PI * 2)));
             graphics.drawString("Angle: " + displayAngle, drawingX, hudY);
+        }
+        if (collisionWatch) {
+            graphics.setColor(Color.CYAN);
+            graphics.drawRect(drawingX - renderWidth / 2, drawingY - renderHeight / 2, renderWidth, renderHeight);
+            // TODO
+            if (moveableTag != null) {
+
+            }
         }
     }
 
@@ -648,6 +669,11 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
             case DISPLAY_ADVANCED_HUD:
                 if (latestGameState.isServerDebugMode()) {
                     advancedHudEnabled = !advancedHudEnabled;
+                }
+                break;
+            case SHOW_COLLISION_MARKERS:
+                if (latestGameState.isServerDebugMode()) {
+                    collisionWatch = !collisionWatch;
                 }
                 break;
         }

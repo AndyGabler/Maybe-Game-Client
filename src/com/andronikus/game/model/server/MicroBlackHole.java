@@ -68,6 +68,14 @@ public class MicroBlackHole implements IMoveable {
      * {@inheritDoc}
      */
     @Override
+    public long getMoveableId() {
+        return id;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public void setXPosition(long x) {
         this.x = x;
     }
@@ -108,5 +116,13 @@ public class MicroBlackHole implements IMoveable {
     @Override
     public void setDirectionTickDelta(double angle) {
         this.angularVelocity = angle;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String moveableTag() {
+        return "BLACKHOLE";
     }
 }

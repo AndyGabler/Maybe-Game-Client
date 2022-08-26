@@ -1,5 +1,6 @@
 package com.andronikus.game.model.server;
 
+import com.andronikus.game.model.server.debug.ServerDebugSettings;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -24,7 +25,7 @@ public class GameState implements Serializable {
     private long nextSpawnId = 0;
     private IBorder border;
     private boolean serverDebugMode;
-    private ArrayList<CommandAcknowledgement> commandAcknowledgements = new ArrayList<>();
+    private ServerDebugSettings debugSettings;
 
 
     // Control flags

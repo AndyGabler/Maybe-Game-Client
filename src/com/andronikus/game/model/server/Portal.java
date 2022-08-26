@@ -70,6 +70,14 @@ public class Portal implements IMoveable {
      * {@inheritDoc}
      */
     @Override
+    public long getMoveableId() {
+        return id;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public void setXPosition(long x) {
         this.x = x;
     }
@@ -110,5 +118,13 @@ public class Portal implements IMoveable {
     @Override
     public void setDirectionTickDelta(double angle) {
         this.angularVelocity = angle;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String moveableTag() {
+        return "PORTAL";
     }
 }

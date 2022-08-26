@@ -1,4 +1,4 @@
-package com.andronikus.game.model.server;
+package com.andronikus.game.model.server.debug;
 
 import lombok.Data;
 

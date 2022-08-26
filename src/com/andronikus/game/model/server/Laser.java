@@ -64,6 +64,14 @@ public class Laser implements IMoveable {
         this.id = id;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public long getMoveableId() {
+        return id;
+    }
+
     @Override
     public void setXPosition(long x) {
         this.x = x;
@@ -92,5 +100,13 @@ public class Laser implements IMoveable {
     @Override
     public void setDirectionTickDelta(double angle) {
         // Do nothing
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String moveableTag() {
+        return "LASER";
     }
 }

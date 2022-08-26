@@ -7,5 +7,6 @@ package com.andronikus.gameclient.ui.input;
  */
 public enum ClientInputType {
     COMMAND_WINDOW_TOGGLE,
-    DISPLAY_ADVANCED_HUD
+    DISPLAY_ADVANCED_HUD,
+    SHOW_COLLISION_MARKERS
 }
