@@ -81,6 +81,8 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
     private static final Color ADVANCED_HUD_TEXT_COLOR = new Color(190, 76, 167);
     private static final Font ADVANCED_HUD_TEXT_FONT = new Font(Font.SANS_SERIF, Font.BOLD, 26);
 
+    private static final Color COLLISION_MARKER_COLOR = new Color(239, 58, 58, 136);
+
     private PlayerStopMotionController mainPlayerStopMotionController = null;
     private final List<PlayerStopMotionController> playerStopMotionControllers = new ArrayList<>();
     private final List<LaserAnimationController> laserAnimationControllers = new ArrayList<>();
@@ -216,12 +218,29 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
 
                 if (collisionWatch) {
                     graphics.setColor(Color.CYAN);
+                    final int collisionWatchX = width / 2 - player.getBoxWidth() / 2;
+                    final int collisionWatchY = height / 2 - player.getBoxHeight() / 2;
                     graphics.drawRect(
-                        width / 2 - player.getBoxWidth() / 2,
-                        height / 2 - player.getBoxHeight() / 2,
+                        collisionWatchX,
+                        collisionWatchY,
                         player.getBoxWidth(),
                         player.getBoxHeight()
                     );
+
+                    final boolean collisionFlag = state
+                        .getDebugSettings()
+                        .getPlayerCollisionFlags()
+                        .stream()
+                        .anyMatch(flag -> flag.getSessionId().equalsIgnoreCase(sessionId));
+                    if (collisionFlag) {
+                        graphics.setColor(COLLISION_MARKER_COLOR);
+                        graphics.fillRect(
+                            collisionWatchX,
+                            collisionWatchY,
+                            player.getBoxWidth(),
+                            player.getBoxHeight()
+                        );
+                    }
                 }
             } else {
                 final BufferedImage sprite = getOrCreateAnimationControllerForPlayer(playerToRender).nextSprite(state, playerToRender);
@@ -481,10 +500,20 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
         }
         if (collisionWatch) {
             graphics.setColor(Color.CYAN);
-            graphics.drawRect(drawingX - renderWidth / 2, drawingY - renderHeight / 2, renderWidth, renderHeight);
-            // TODO
-            if (moveableTag != null) {
+            final int collisionWatchX = drawingX - renderWidth / 2;
+            final int collisionWatchY = drawingY - renderHeight / 2;
+            graphics.drawRect(collisionWatchX, collisionWatchY, renderWidth, renderHeight);
 
+            if (moveableTag != null) {
+                final boolean isColliding = latestGameState
+                    .getDebugSettings()
+                    .getPlayerCollisionFlags()
+                    .stream()
+                    .anyMatch(flag -> flag.getSessionId().equals(sessionId) && flag.getCollisionType().equals(moveableTag) && flag.getCollisionId() == serverId);
+                if (isColliding) {
+                    graphics.setColor(COLLISION_MARKER_COLOR);
+                    graphics.fillRect(collisionWatchX, collisionWatchY, renderWidth, renderHeight);
+                }
             }
         }
     }
