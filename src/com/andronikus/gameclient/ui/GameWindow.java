@@ -216,6 +216,15 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
 
                 ((Graphics2D)graphics).drawImage(sprite, transform, this);
 
+                if (advancedHudEnabled) {
+                    int hudY = height / 2 - player.getBoxHeight() / 2;
+                    graphics.setColor(ADVANCED_HUD_TEXT_COLOR);
+                    graphics.setFont(ADVANCED_HUD_TEXT_FONT);
+                    graphics.drawString("(" + player.getX() + ", " + player.getY() + ")", width / 2, hudY);
+                    hudY += 30;
+                    String displayAngle = String.format("%.2f", Math.toDegrees(player.getAngle() % (Math.PI * 2)));
+                    graphics.drawString("Angle: " + displayAngle, width / 2, hudY);
+                }
                 if (collisionWatch) {
                     graphics.setColor(Color.CYAN);
                     final int collisionWatchX = width / 2 - player.getBoxWidth() / 2;
