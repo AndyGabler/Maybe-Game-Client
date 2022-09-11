@@ -11,6 +11,9 @@ import com.andronikus.game.model.server.Snake;
 import com.andronikus.gameclient.engine.IClientInputSupplier;
 import com.andronikus.gameclient.engine.IGameStateRenderer;
 import com.andronikus.gameclient.engine.IRendererPresetup;
+import com.andronikus.gameclient.ui.input.ClientInput;
+import com.andronikus.gameclient.ui.input.IUserInput;
+import com.andronikus.gameclient.ui.input.ServerInput;
 import com.andronikus.gameclient.ui.keyboard.KeyBoardListener;
 import com.andronikus.gameclient.ui.render.asteroid.LargeAsteroidStopMotionController;
 import com.andronikus.gameclient.ui.render.asteroid.SmallAsteroidStopMotionController;
@@ -26,11 +29,13 @@ import lombok.Setter;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Image;
-import java.awt.Graphics2D;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.Font;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
@@ -55,7 +60,7 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
     private volatile String sessionId;
     private final JFrame frame;
     private volatile GameState latestGameState = null;
-    private final ConcurrentInputManager inputManager;
+    private final ConcurrentInputManager serverInputManager;
 
     private final Image background;
     private static final int PLAYER_SIZE = 64;
@@ -67,6 +72,16 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
     private static final int SNAKE_WIDTH = 16;
     private static final int SNAKE_HEIGHT = 64;
     private static final int PORTAL_SIZE = 64;
+    private static final Color COMMAND_TEXT_COLOR = new Color(94, 222, 52);
+    private static final Font COMMAND_TEXT_FONT = new Font(Font.MONOSPACED, Font.BOLD, 24);
+    private static final Color GAME_SETTING_OFF_TEXT_COLOR = new Color(238, 60, 60);
+    private static final Color GAME_SETTING_ON_TEXT_COLOR = new Color(80, 255, 113);
+    private static final Font GAME_SETTING_TEXT_FONT = new Font(Font.DIALOG, Font.PLAIN, 14);
+
+    private static final Color ADVANCED_HUD_TEXT_COLOR = new Color(190, 76, 167);
+    private static final Font ADVANCED_HUD_TEXT_FONT = new Font(Font.SANS_SERIF, Font.BOLD, 26);
+
+    private static final Color COLLISION_MARKER_COLOR = new Color(239, 58, 58, 136);
 
     private PlayerStopMotionController mainPlayerStopMotionController = null;
     private final List<PlayerStopMotionController> playerStopMotionControllers = new ArrayList<>();
@@ -80,6 +95,15 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
     private final HudRenderer hudRenderer = new HudRenderer();
     private final TrackerSpriteSheet trackerSpriteSheet = new TrackerSpriteSheet();
 
+    @Getter
+    private volatile boolean commandMode;
+    private volatile String commandBuffer = "";
+    private volatile boolean commandLocked = false;
+    private int commandCarrotTickCount = 0;
+    private boolean commandCarrotToggle = false;
+    private boolean advancedHudEnabled = false;
+    private boolean collisionWatch = false;
+
     /**
      * Instantiate the graphical user interface for a game.
      */
@@ -90,7 +114,7 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
         this.addMouseListener(mouseListener);
         this.addMouseMotionListener(mouseListener);
 
-        final KeyBoardListener keyBoardListener = new KeyBoardListener(this);
+        KeyBoardListener keyBoardListener = new KeyBoardListener(this);
         this.addKeyListener(keyBoardListener);
         frame.addKeyListener(keyBoardListener);
         this.addComponentListener(new ResizeListener(this));
@@ -101,7 +125,7 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         background = ImagesUtil.getImage("background.png");
-        inputManager = new ConcurrentInputManager();
+        serverInputManager = new ConcurrentInputManager();
     }
 
     /**
@@ -153,7 +177,7 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
 
                 renderObjectRelativeToMainPlayer(
                     graphics, sprite, laser.getX(), laser.getY(),
-                    LASER_WIDTH, LASER_HEIGHT, laser.getAngle(), playerX, playerY
+                    LASER_WIDTH, LASER_HEIGHT, laser.getAngle(), playerX, playerY, laser.getId(), laser.moveableTag()
                 );
             }
         });
@@ -163,7 +187,7 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
 
             renderObjectRelativeToMainPlayer(
                 graphics, sprite, blackHole.getX(), blackHole.getY(),
-                PORTAL_SIZE, PORTAL_SIZE, blackHole.getAngle(), playerX, playerY
+                PORTAL_SIZE, PORTAL_SIZE, blackHole.getAngle(), playerX, playerY, blackHole.getId(), blackHole.moveableTag()
             );
         });
 
@@ -172,7 +196,7 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
 
             renderObjectRelativeToMainPlayer(
                 graphics, sprite, portal.getX(), portal.getY(),
-                PORTAL_SIZE, PORTAL_SIZE, portal.getAngle(), playerX, playerY
+                PORTAL_SIZE, PORTAL_SIZE, portal.getAngle(), playerX, playerY, portal.getId(), portal.moveableTag()
             );
         });
 
@@ -191,12 +215,48 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
                 transform.translate(-PLAYER_SIZE / 2, -PLAYER_SIZE / 2);
 
                 ((Graphics2D)graphics).drawImage(sprite, transform, this);
+
+                if (advancedHudEnabled) {
+                    int hudY = height / 2 - player.getBoxHeight() / 2;
+                    graphics.setColor(ADVANCED_HUD_TEXT_COLOR);
+                    graphics.setFont(ADVANCED_HUD_TEXT_FONT);
+                    graphics.drawString("(" + player.getX() + ", " + player.getY() + ")", width / 2, hudY);
+                    hudY += 30;
+                    String displayAngle = String.format("%.2f", Math.toDegrees(player.getAngle() % (Math.PI * 2)));
+                    graphics.drawString("Angle: " + displayAngle, width / 2, hudY);
+                }
+                if (collisionWatch) {
+                    graphics.setColor(Color.CYAN);
+                    final int collisionWatchX = width / 2 - player.getBoxWidth() / 2;
+                    final int collisionWatchY = height / 2 - player.getBoxHeight() / 2;
+                    graphics.drawRect(
+                        collisionWatchX,
+                        collisionWatchY,
+                        player.getBoxWidth(),
+                        player.getBoxHeight()
+                    );
+
+                    final boolean collisionFlag = state
+                        .getDebugSettings()
+                        .getPlayerCollisionFlags()
+                        .stream()
+                        .anyMatch(flag -> flag.getSessionId().equalsIgnoreCase(sessionId));
+                    if (collisionFlag) {
+                        graphics.setColor(COLLISION_MARKER_COLOR);
+                        graphics.fillRect(
+                            collisionWatchX,
+                            collisionWatchY,
+                            player.getBoxWidth(),
+                            player.getBoxHeight()
+                        );
+                    }
+                }
             } else {
                 final BufferedImage sprite = getOrCreateAnimationControllerForPlayer(playerToRender).nextSprite(state, playerToRender);
 
                 renderObjectRelativeToMainPlayer(
                     graphics, sprite, playerToRender.getX(), playerToRender.getY(),
-                    PLAYER_SIZE, PLAYER_SIZE, playerToRender.getAngle(), playerX, playerY
+                    PLAYER_SIZE, PLAYER_SIZE, playerToRender.getAngle(), playerX, playerY, null, null
                 );
 
                 final BufferedImage tracker = trackerSpriteSheet.getTrackerSpriteForColor(playerToRender.getColor());
@@ -211,7 +271,7 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
                         // Render tracker for player that is within visible range
                         renderObjectRelativeToMainPlayer(
                             graphics, tracker, playerToRender.getX(), playerToRender.getY() + PLAYER_SIZE,
-                            PLAYER_SIZE / 2, PLAYER_SIZE / 2, Math.PI / 2 * 3, playerX, playerY
+                            PLAYER_SIZE / 2, PLAYER_SIZE / 2, Math.PI / 2 * 3, playerX, playerY, null, null
                         );
                     }
                 }
@@ -222,7 +282,7 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
         state.getSnakes().forEach(snake -> {
             final BufferedImage sprite = getOrCreateAnimationControllerForSnake(snake).nextSprite(state, snake);
             renderObjectRelativeToMainPlayer(
-                graphics, sprite, snake.getX(), snake.getY(), SNAKE_WIDTH, SNAKE_HEIGHT, snake.getAngle(), playerX, playerY
+                graphics, sprite, snake.getX(), snake.getY(), SNAKE_WIDTH, SNAKE_HEIGHT, snake.getAngle(), playerX, playerY, snake.getId(), snake.moveableTag()
             );
         });
 
@@ -233,14 +293,14 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
 
                 renderObjectRelativeToMainPlayer(
                     graphics, sprite, asteroid.getX(), asteroid.getY(),
-                    SMALL_ASTEROID_SIZE, SMALL_ASTEROID_SIZE, asteroid.getAngle(), playerX, playerY
+                    SMALL_ASTEROID_SIZE, SMALL_ASTEROID_SIZE, asteroid.getAngle(), playerX, playerY, asteroid.getId(), asteroid.moveableTag()
                 );
             } else {
                 final BufferedImage sprite = getOrCreateAnimationControllerForLargeAsteroid(asteroid).nextSprite(state, asteroid);
 
                 renderObjectRelativeToMainPlayer(
                     graphics, sprite, asteroid.getX(), asteroid.getY(),
-                    LARGE_ASTEROID_WIDTH, LARGE_ASTEROID_HEIGHT, asteroid.getAngle(), playerX, playerY, true
+                    LARGE_ASTEROID_WIDTH, LARGE_ASTEROID_HEIGHT, asteroid.getAngle(), playerX, playerY, asteroid.getId(), asteroid.moveableTag(), true
                 );
             }
         });
@@ -252,7 +312,7 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
 
                 renderObjectRelativeToMainPlayer(
                     graphics, sprite, laser.getX(), laser.getY(),
-                    LASER_WIDTH, LASER_HEIGHT, laser.getAngle(), playerX, playerY
+                    LASER_WIDTH, LASER_HEIGHT, laser.getAngle(), playerX, playerY, laser.getId(), laser.moveableTag()
                 );
             }
         });
@@ -264,6 +324,37 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
             graphics, player.getHealth(), player.getShieldCount(), player.getShieldRecharge(),
             player.getBoostingCharge(), player.getBoostingRecharge(), player.getLaserCharges(), this
         );
+
+        if (commandMode) {
+            commandCarrotTickCount = (commandCarrotTickCount + 1) % 13;
+            if (commandCarrotTickCount == 0) {
+                commandCarrotToggle = !commandCarrotToggle;
+            }
+            String carrot = commandCarrotToggle ? "|" : "";
+            graphics.setColor(COMMAND_TEXT_COLOR);
+            graphics.setFont(COMMAND_TEXT_FONT);
+            graphics.drawString("ENTER COMMAND:", 60, 15);
+            graphics.drawString(commandBuffer + carrot, 60, 33);
+        }
+
+        if (!latestGameState.isSpawningEnabled() ||
+            !latestGameState.isMovementEnabled() ||
+            !latestGameState.isCollisionsEnabled() ||
+            !latestGameState.isTickEnabled()) {
+            graphics.setFont(GAME_SETTING_TEXT_FONT);
+
+            graphics.setColor(latestGameState.isTickEnabled() ? GAME_SETTING_ON_TEXT_COLOR : GAME_SETTING_OFF_TEXT_COLOR);
+            graphics.drawString("Tick Enabled: " + latestGameState.isTickEnabled(), 14, height - 40);
+
+            graphics.setColor(latestGameState.isMovementEnabled() ? GAME_SETTING_ON_TEXT_COLOR : GAME_SETTING_OFF_TEXT_COLOR);
+            graphics.drawString("Movement Enabled: " + latestGameState.isMovementEnabled(), 14, height - 30);
+
+            graphics.setColor(latestGameState.isCollisionsEnabled() ? GAME_SETTING_ON_TEXT_COLOR : GAME_SETTING_OFF_TEXT_COLOR);
+            graphics.drawString("Collision Enabled: " + latestGameState.isCollisionsEnabled(), 14, height - 20);
+
+            graphics.setColor(latestGameState.isSpawningEnabled() ? GAME_SETTING_ON_TEXT_COLOR : GAME_SETTING_OFF_TEXT_COLOR);
+            graphics.drawString("Spawning Enabled: " + latestGameState.isSpawningEnabled(), 14, height - 10);
+        }
     }
 
     /**
@@ -353,13 +444,15 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
      * @param angle The angle of the render
      * @param playerX X position the main player is at
      * @param playerY Y position the main player is at
+     * @param serverId ID of the entity according to the connected server
+     * @param moveableTag Tag name of the type of moveable being rendered
      */
     private void renderObjectRelativeToMainPlayer(
             Graphics graphics, BufferedImage sprite,
             long x, long y, int renderWidth, int renderHeight, double angle,
-            long playerX, long playerY
+            long playerX, long playerY, Long serverId, String moveableTag
     ) {
-        renderObjectRelativeToMainPlayer(graphics, sprite, x, y, renderWidth, renderHeight, angle, playerX, playerY, false);
+        renderObjectRelativeToMainPlayer(graphics, sprite, x, y, renderWidth, renderHeight, angle, playerX, playerY, serverId, moveableTag, false);
     }
 
     /**
@@ -375,18 +468,23 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
      * @param angle The angle of the render
      * @param playerX X position the main player is at
      * @param playerY Y position the main player is at
+     * @param serverId ID of the entity according to the connected server
+     * @param moveableTag Tag name of the type of moveable being rendered
      * @param skipForceRotate Skip the step where the client forcefully rotates object to fit sprite specs
      */
     private void renderObjectRelativeToMainPlayer(
         Graphics graphics, BufferedImage sprite,
         long x, long y, int renderWidth, int renderHeight, double angle,
-        long playerX, long playerY, boolean skipForceRotate
+        long playerX, long playerY, Long serverId, String moveableTag,
+        boolean skipForceRotate
     ) {
         final int xOffset = (int)(x - playerX);
         final int yOffset = (int)(y - playerY);
 
+        final int drawingX = this.width / 2 + xOffset;
+        final int drawingY = this.height / 2 - yOffset;
         final AffineTransform transform = new AffineTransform();
-        transform.translate(this.width / 2 + xOffset, this.height / 2 - yOffset);
+        transform.translate(drawingX, drawingY);
 
         double spriteFitOffset = Math.PI / 2;
         if (skipForceRotate) {
@@ -397,6 +495,36 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
         transform.translate(-(renderWidth / 2), -(renderHeight / 2));
 
         ((Graphics2D)graphics).drawImage(sprite, transform, this);
+
+        if (advancedHudEnabled) {
+            int hudY = drawingY;
+            graphics.setColor(ADVANCED_HUD_TEXT_COLOR);
+            graphics.setFont(ADVANCED_HUD_TEXT_FONT);
+            graphics.drawString("ID: " + serverId, drawingX, hudY);
+            hudY += 30;
+            graphics.drawString("(" + x + ", " + y + ")", drawingX, hudY);
+            hudY += 30;
+            String displayAngle = String.format("%.2f", Math.toDegrees(angle % (Math.PI * 2)));
+            graphics.drawString("Angle: " + displayAngle, drawingX, hudY);
+        }
+        if (collisionWatch) {
+            graphics.setColor(Color.CYAN);
+            final int collisionWatchX = drawingX - renderWidth / 2;
+            final int collisionWatchY = drawingY - renderHeight / 2;
+            graphics.drawRect(collisionWatchX, collisionWatchY, renderWidth, renderHeight);
+
+            if (moveableTag != null) {
+                final boolean isColliding = latestGameState
+                    .getDebugSettings()
+                    .getPlayerCollisionFlags()
+                    .stream()
+                    .anyMatch(flag -> flag.getSessionId().equals(sessionId) && flag.getCollisionType().equals(moveableTag) && flag.getCollisionId() == serverId);
+                if (isColliding) {
+                    graphics.setColor(COLLISION_MARKER_COLOR);
+                    graphics.fillRect(collisionWatchX, collisionWatchY, renderWidth, renderHeight);
+                }
+            }
+        }
     }
 
     /**
@@ -555,8 +683,70 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
      *
      * @param input The input code
      */
-    public void addInput(String input) {
-        inputManager.addToQueue(input);
+    public void addInput(IUserInput input) {
+        if (input instanceof ServerInput) {
+            serverInputManager.addToQueue(((ServerInput) input).getCode());
+        } else {
+            handleClientInput((ClientInput) input);
+        }
+    }
+
+    /**
+     * Handle an input if it is intended for the Client, presumably, targeting state of the game window.
+     *
+     * @param clientInput The input
+     */
+    private void handleClientInput(ClientInput clientInput) {
+        switch (clientInput.getType()) {
+            case COMMAND_WINDOW_TOGGLE:
+                if (latestGameState != null && latestGameState.isServerDebugMode() && !commandLocked) {
+                    commandBuffer = "";
+                    commandMode = true;
+                }
+                break;
+            case DISPLAY_ADVANCED_HUD:
+                if (latestGameState.isServerDebugMode()) {
+                    advancedHudEnabled = !advancedHudEnabled;
+                }
+                break;
+            case SHOW_COLLISION_MARKERS:
+                if (latestGameState.isServerDebugMode()) {
+                    collisionWatch = !collisionWatch;
+                }
+                break;
+        }
+    }
+
+    /**
+     * Add a character to the command buffer.
+     *
+     * @param character The character
+     */
+    public void appendCommandBuffer(char character) {
+        if (!commandLocked) {
+            commandBuffer += character;
+        }
+    }
+
+    /**
+     * Delete a character from the command buffer.
+     */
+    public void deleteCommandBufferCharacter() {
+        if (!commandLocked && commandBuffer.length() > 0) {
+            commandBuffer = commandBuffer.substring(0, commandBuffer.length() - 1);
+        }
+    }
+
+    /**
+     * Exit command mode.
+     *
+     * @param doCommand Whether or not the command as read on the buffer should be executed.
+     */
+    public void exitCommandMode(boolean doCommand) {
+        commandMode = false;
+        if (doCommand) {
+            commandLocked = true;
+        }
     }
 
     /**
@@ -575,7 +765,20 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
      * {@inheritDoc}
      */
     @Override
+    public String getCommand() {
+        String command = null;
+        if (commandLocked) {
+            command = commandBuffer;
+            commandLocked = false;
+        }
+        return command;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public List<String> getAndClearInputs() {
-        return inputManager.getUnhandledCodes();
+        return serverInputManager.getUnhandledCodes();
     }
 }

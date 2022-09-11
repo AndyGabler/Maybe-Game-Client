@@ -72,6 +72,14 @@ public class Snake implements IMoveable {
      * {@inheritDoc}
      */
     @Override
+    public long getMoveableId() {
+        return id;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public void setXPosition(long x) {
         this.x = x;
     }
@@ -113,4 +121,12 @@ public class Snake implements IMoveable {
      */
     @Override
     public void setDirectionTickDelta(double angle) {}
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String moveableTag() {
+        return "PORTAL";
+    }
 }

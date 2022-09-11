@@ -93,6 +93,8 @@ public class PlayerStopMotionController extends StopMotionController<GameState, 
 
         reappearingState.createTransition((gameState, player) -> player.getCollidedPortalId() == null, idleState);
 
+        deathState.createTransition((gameState, player) -> !player.isDead(), idleState);
+
         return idleState;
     }
 

@@ -8,14 +8,14 @@ import lombok.Data;
  * @author Andronikus
  */
 @Data
-public class Player implements ICollideable {
+public class Player implements IMoveable {
 
     private String sessionId;
 
     private long x;
     private long y;
 
-    private long XVelocity = 0;
+    private long xVelocity = 0;
     private long yVelocity = 0;
 
     private long externalXAcceleration;
@@ -88,5 +88,56 @@ public class Player implements ICollideable {
     @Override
     public double getTilt() {
         return angle;
+    }
+
+    @Override
+    public void setMoveableId(long id) {
+        // can't set player ID
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public long getMoveableId() {
+        return 0L;
+    }
+
+    @Override
+    public void setXPosition(long x) {
+        this.x = x;
+    }
+
+    @Override
+    public void setYPosition(long y) {
+        this.y = y;
+    }
+
+    @Override
+    public void setXTickDelta(long xDelta) {
+        this.xVelocity = xDelta;
+    }
+
+    @Override
+    public void setYTickDelta(long yDelta) {
+        this.yVelocity = yDelta;
+    }
+
+    @Override
+    public void setDirection(double angle) {
+        this.angle = angle;
+    }
+
+    @Override
+    public void setDirectionTickDelta(double angle) {
+        // Nothing
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String moveableTag() {
+        return "PLAYER";
     }
 }

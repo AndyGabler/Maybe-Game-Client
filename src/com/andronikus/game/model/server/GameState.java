@@ -1,5 +1,6 @@
 package com.andronikus.game.model.server;
 
+import com.andronikus.game.model.server.debug.ServerDebugSettings;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -13,7 +14,7 @@ import java.util.ArrayList;
 @Data
 public class GameState implements Serializable {
     private long version = -1;
-    private ArrayList<ICollideable> collideables = new ArrayList<>();
+    private ArrayList<IMoveable> collideables = new ArrayList<>();
     private ArrayList<Player> players = new ArrayList<>();
     private ArrayList<Laser> lasers = new ArrayList<>();
     private ArrayList<Asteroid> asteroids = new ArrayList<>();
@@ -23,4 +24,13 @@ public class GameState implements Serializable {
     private long nextLaserId = 0;
     private long nextSpawnId = 0;
     private IBorder border;
+    private boolean serverDebugMode;
+    private ServerDebugSettings debugSettings;
+
+
+    // Control flags
+    private boolean tickEnabled;
+    private boolean collisionsEnabled;
+    private boolean movementEnabled;
+    private boolean spawningEnabled;
 }

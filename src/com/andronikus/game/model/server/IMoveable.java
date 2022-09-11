@@ -1,11 +1,13 @@
 package com.andronikus.game.model.server;
 
+import java.io.Serializable;
+
 /**
  * Object that is moveable by the engine.
  *
  * @author Andronikus
  */
-public interface IMoveable extends ICollideable {
+public interface IMoveable extends Serializable {
 
     /**
      * Set ID of the moveable.
@@ -15,7 +17,15 @@ public interface IMoveable extends ICollideable {
     void setMoveableId(long id);
 
     /**
+     * Get ID of the moveable.
+     *
+     * @return id The moveable
+     */
+    long getMoveableId();
+
+    /**
      * Set X Position of the moveable.
+     *
      * @param x The x
      */
     void setXPosition(long x);
@@ -54,4 +64,46 @@ public interface IMoveable extends ICollideable {
      * @param angle The angle at the angle changes each tick
      */
     void setDirectionTickDelta(double angle);
+
+    /**
+     * Get hitbox X.
+     *
+     * @return The X
+     */
+    long getBoxX();
+
+    /**
+     * Get hitbox Y.
+     *
+     * @return The Y
+     */
+    long getBoxY();
+
+    /**
+     * Get hitbox width.
+     *
+     * @return The width
+     */
+    int getBoxWidth();
+
+    /**
+     * Get hitbox height.
+     *
+     * @return The height
+     */
+    int getBoxHeight();
+
+    /**
+     * Angle at which the hitbox is tilted.
+     *
+     * @return The tilt angle
+     */
+    double getTilt();
+
+    /**
+     * Get the moveable tag for type of moveable.
+     *
+     * @return The moveable tag
+     */
+    String moveableTag();
 }
