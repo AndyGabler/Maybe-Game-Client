@@ -39,8 +39,10 @@ public class ResizeListener implements ComponentListener {
      */
     @Override
     public void componentResized(ComponentEvent event) {
-        window.setWidth((int) event.getComponent().getSize().getWidth());
-        window.setHeight((int) event.getComponent().getSize().getHeight());
+        window.setDimensions(
+            (int) event.getComponent().getSize().getWidth(),
+            (int) event.getComponent().getSize().getHeight()
+        );
 
         window.repaint();
     }
