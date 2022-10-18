@@ -319,7 +319,12 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
         });
 
         graphics.setColor(Color.GREEN);
-        graphics.drawRect((int) (playerX * -1) + (width / 2), (int) (playerY - maxPlayerY) + (height / 2), (int)maxPlayerX, (int)maxPlayerY);
+        graphics.drawRect(
+            (int) ((renderRatio.getWidthScale() * (double) playerX * -1) + ((double) width / 2)),
+            (int) ((renderRatio.getHeightScale() * (double) (playerY - maxPlayerY)) + ((double) height / 2)),
+            (int) (renderRatio.getWidthScale() * (double) maxPlayerX),
+            (int) (renderRatio.getHeightScale() * (double) maxPlayerY)
+        );
 
         hudRenderer.drawHud(
             graphics, player.getHealth(), player.getShieldCount(), player.getShieldRecharge(),
