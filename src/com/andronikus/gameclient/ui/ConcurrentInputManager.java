@@ -40,7 +40,7 @@ public class ConcurrentInputManager {
      * @return The input codes
      */
     public List<String> getUnhandledCodes() {
-        final int sizeAtTimeOfCall = size;
+        final int sizeAtTimeOfCall = Math.min(size, headPosition + 5);
         final int indexToCountTo = sizeAtTimeOfCall - headPosition;
         headPosition = sizeAtTimeOfCall;
 

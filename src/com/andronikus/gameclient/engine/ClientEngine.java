@@ -8,7 +8,6 @@ import com.andronikus.gameclient.engine.command.ClientCommandManager;
 import javax.swing.Timer;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -79,13 +78,10 @@ public class ClientEngine implements ActionListener {
             sequenceNumber = sequenceNumber + 1;
             inputSupplier.getAndClearInputs();
 
-            final ArrayList<String> inputCodes = new ArrayList<>();
-            inputCodes.add("JOINGAME");
-
             final ClientRequest request = new ClientRequest();
             request.setSessionToken(client.getSessionSecret());
             request.setSequenceNumber(sequenceNumber);
-            request.setInputCodes(inputCodes);
+            request.setInputCode0("JOINGAME");
 
             client.sendClientRequest(request);
             return;
@@ -99,7 +95,19 @@ public class ClientEngine implements ActionListener {
             final ClientRequest request = new ClientRequest();
             request.setSessionToken(client.getSessionSecret());
             request.setSequenceNumber(sequenceNumber);
-            request.setInputCodes(inputCodes);
+            for (int index = 0; index < inputCodes.size(); index++) {
+                if (index == 0) {
+                    request.setInputCode0(inputCodes.get(index));
+                } else if (index == 1) {
+                    request.setInputCode1(inputCodes.get(index));
+                } else if (index == 2) {
+                    request.setInputCode2(inputCodes.get(index));
+                } else if (index == 3) {
+                    request.setInputCode3(inputCodes.get(index));
+                } else if (index == 4) {
+                    request.setInputCode4(inputCodes.get(index));
+                }
+            }
 
             if (latestGameState != null && commandManager != null && latestGameState.isServerDebugMode()) {
                 if (commandCode != null) {
