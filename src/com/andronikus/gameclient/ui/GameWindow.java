@@ -53,9 +53,9 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
 
     @Getter
     private volatile int height;
-    private final AspectRatio candidateAspectRatio;
+    private final RenderRatio candidateRenderRatio;
     @Getter
-    private volatile AspectRatio aspectRatio;
+    private volatile RenderRatio renderRatio;
 
     private volatile String sessionId;
     private final JFrame frame;
@@ -116,8 +116,8 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
 
         KeyBoardListener keyBoardListener = new KeyBoardListener(this);
         this.addKeyListener(keyBoardListener);
-        aspectRatio = new AspectRatio(550, 330);
-        candidateAspectRatio = aspectRatio.copy();
+        renderRatio = new RenderRatio(550, 330);
+        candidateRenderRatio = renderRatio.copy();
         frame.addKeyListener(keyBoardListener);
         this.addComponentListener(new ResizeListener(this));
 
@@ -126,7 +126,7 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
         frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        backgroundRenderer = new BackgroundRenderer("background.png", 10, 10);
+        backgroundRenderer = new BackgroundRenderer("background.png");
         serverInputManager = new ConcurrentInputManager();
     }
 
@@ -137,7 +137,7 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
      */
     public void paintComponent(Graphics graphics) {
         // TODO generify iterative animations
-        aspectRatio = candidateAspectRatio.copy();
+        renderRatio = candidateRenderRatio.copy();
 
         // Check if the game state is loaded in (that is, has the server acked us, if not, blue screen)
         final GameState state = latestGameState;
@@ -166,7 +166,7 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
         final long maxPlayerY = ((BoundingBoxBorder) state.getBorder()).getMaxY();
 
         // Draw the background
-        backgroundRenderer.render(graphics, player, (BoundingBoxBorder) state.getBorder(), width, height,this);
+        backgroundRenderer.render(graphics, player, (BoundingBoxBorder) state.getBorder(), this);
 
         // Render lasers that hit something
         state.getLasers().forEach(laser -> {
@@ -210,8 +210,8 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
                 final AffineTransform transform = new AffineTransform();
                 transform.translate(width / 2, height / 2);
                 transform.rotate((playerToRender.getAngle() * -1) + Math.PI / 2);
-                transform.translate(-(aspectRatio.getWidthScale() * (double) PLAYER_SIZE) / 2, -(aspectRatio.getHeightScale() * (double) PLAYER_SIZE / 2));
-                transform.scale(aspectRatio.getWidthScale(), aspectRatio.getHeightScale());
+                transform.translate(-(renderRatio.getWidthScale() * (double) PLAYER_SIZE) / 2, -(renderRatio.getHeightScale() * (double) PLAYER_SIZE / 2));
+                transform.scale(renderRatio.getWidthScale(), renderRatio.getHeightScale());
 
                 ((Graphics2D)graphics).drawImage(sprite, transform, this);
 
@@ -226,8 +226,8 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
                 }
                 if (collisionWatch) {
                     graphics.setColor(Color.CYAN);
-                    final int playerBoxWidth = (int) (aspectRatio.getWidthScale() * (double) player.getBoxWidth());
-                    final int playerBoxHeight = (int) (aspectRatio.getHeightScale() * (double) player.getBoxHeight());
+                    final int playerBoxWidth = (int) (renderRatio.getWidthScale() * (double) player.getBoxWidth());
+                    final int playerBoxHeight = (int) (renderRatio.getHeightScale() * (double) player.getBoxHeight());
                     final int collisionWatchX = width / 2 - playerBoxWidth / 2;
                     final int collisionWatchY = height / 2 - playerBoxHeight / 2;
                     graphics.drawRect(
@@ -479,11 +479,11 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
         long playerX, long playerY, Long serverId, String moveableTag,
         boolean skipForceRotate
     ) {
-        renderWidth = (int) (aspectRatio.getWidthScale() * (double) renderWidth);
-        renderHeight = (int) (aspectRatio.getHeightScale() * (double) renderHeight);
+        renderWidth = (int) (renderRatio.getWidthScale() * (double) renderWidth);
+        renderHeight = (int) (renderRatio.getHeightScale() * (double) renderHeight);
 
-        final int xOffset = (int)(aspectRatio.getWidthScale() * (double)(x - playerX));
-        final int yOffset = (int)(aspectRatio.getHeightScale() * (double)(y - playerY));
+        final int xOffset = (int)(renderRatio.getWidthScale() * (double)(x - playerX));
+        final int yOffset = (int)(renderRatio.getHeightScale() * (double)(y - playerY));
 
         final int drawingX = this.width / 2 + xOffset;
         final int drawingY = this.height / 2 - yOffset;
@@ -497,7 +497,7 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
 
         transform.rotate((angle * -1) + spriteFitOffset);
         transform.translate(-(renderWidth / 2), -(renderHeight / 2));
-        transform.scale(aspectRatio.getWidthScale(), aspectRatio.getHeightScale());
+        transform.scale(renderRatio.getWidthScale(), renderRatio.getHeightScale());
 
         ((Graphics2D)graphics).drawImage(sprite, transform, this);
 
@@ -783,7 +783,7 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
         this.width = aWidth;
         this.height = aHeight;
 
-        candidateAspectRatio.calculate(aWidth, aHeight);
+        candidateRenderRatio.calculate(aWidth, aHeight);
     }
 
     /**
