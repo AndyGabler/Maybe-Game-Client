@@ -1,9 +1,11 @@
 package com.andronikus.gameclient.engine;
 
 import com.andronikus.game.model.client.ClientRequest;
+import com.andronikus.game.model.client.InputRequest;
 import com.andronikus.game.model.server.GameState;
 import com.andronikus.gameclient.client.GameClient;
 import com.andronikus.gameclient.engine.command.ClientCommandManager;
+import com.andronikus.gameclient.ui.input.ServerInput;
 
 import javax.swing.Timer;
 import java.awt.event.ActionEvent;
@@ -81,13 +83,17 @@ public class ClientEngine implements ActionListener {
             final ClientRequest request = new ClientRequest();
             request.setSessionToken(client.getSessionSecret());
             request.setSequenceNumber(sequenceNumber);
-            request.setInputCode0("JOINGAME");
+
+            final InputRequest joinGameRequest = new InputRequest();
+            joinGameRequest.setInputCode("JOINGAME");
+
+            request.setInputCode0(joinGameRequest);
 
             client.sendClientRequest(request);
             return;
         }
 
-        final List<String> inputCodes = inputSupplier.getAndClearInputs();
+        final List<ServerInput> inputCodes = inputSupplier.getAndClearInputs();
         final String commandCode = inputSupplier.getCommand();
         if (inputCodes.size() > 0 || commandCode != null) {
             sequenceNumber = sequenceNumber + 1;
@@ -96,16 +102,22 @@ public class ClientEngine implements ActionListener {
             request.setSessionToken(client.getSessionSecret());
             request.setSequenceNumber(sequenceNumber);
             for (int index = 0; index < inputCodes.size(); index++) {
+                final ServerInput nextServerInput = inputCodes.get(index);
+                final InputRequest inputRequest = new InputRequest();
+                inputRequest.setInputId(nextServerInput.getInputId());
+                inputRequest.setInputCode(nextServerInput.getCode());
+                inputRequest.setAckRequired(nextServerInput.isDirectAckRequired());
+
                 if (index == 0) {
-                    request.setInputCode0(inputCodes.get(index));
+                    request.setInputCode0(inputRequest);
                 } else if (index == 1) {
-                    request.setInputCode1(inputCodes.get(index));
+                    request.setInputCode1(inputRequest);
                 } else if (index == 2) {
-                    request.setInputCode2(inputCodes.get(index));
+                    request.setInputCode2(inputRequest);
                 } else if (index == 3) {
-                    request.setInputCode3(inputCodes.get(index));
+                    request.setInputCode3(inputRequest);
                 } else if (index == 4) {
-                    request.setInputCode4(inputCodes.get(index));
+                    request.setInputCode4(inputRequest);
                 }
             }
 

@@ -14,11 +14,11 @@ import java.util.List;
 @Data
 public class ClientRequest implements Serializable {
     private long sequenceNumber = 0;
-    private String inputCode0 = null;
-    private String inputCode1 = null;
-    private String inputCode2 = null;
-    private String inputCode3 = null;
-    private String inputCode4 = null;
+    private InputRequest inputCode0 = null;
+    private InputRequest inputCode1 = null;
+    private InputRequest inputCode2 = null;
+    private InputRequest inputCode3 = null;
+    private InputRequest inputCode4 = null;
     private String sessionToken;
     private List<ClientCommand> clientCommands = new ArrayList<>();
     private List<ClientCommand> commandsToRemove = new ArrayList<>();

@@ -1,5 +1,7 @@
 package com.andronikus.gameclient.engine;
 
+import com.andronikus.gameclient.ui.input.ServerInput;
+
 import java.util.List;
 
 /**
@@ -14,7 +16,7 @@ public interface IClientInputSupplier {
      *
      * @return The inputs
      */
-    List<String> getAndClearInputs();
+    List<ServerInput> getAndClearInputs();
 
     /**
      * Get the command that will be sent to the server.

@@ -8,6 +8,7 @@ import com.andronikus.gameclient.engine.IClientInputSupplier;
 import com.andronikus.gameclient.engine.IGameStateRenderer;
 import com.andronikus.gameclient.engine.IRendererPresetup;
 import com.andronikus.gameclient.ui.GameWindow;
+import com.andronikus.gameclient.ui.input.ServerInput;
 import com.gabler.client.ClientStartException;
 import com.google.gson.Gson;
 
@@ -67,7 +68,7 @@ public class AppStart {
             };
             inputSupplier = new IClientInputSupplier() {
                 @Override
-                public List<String> getAndClearInputs() {
+                public List<ServerInput> getAndClearInputs() {
                     return new ArrayList<>();
                 }
 

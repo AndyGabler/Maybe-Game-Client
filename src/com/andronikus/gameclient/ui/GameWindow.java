@@ -12,6 +12,7 @@ import com.andronikus.gameclient.engine.IClientInputSupplier;
 import com.andronikus.gameclient.engine.IGameStateRenderer;
 import com.andronikus.gameclient.engine.IRendererPresetup;
 import com.andronikus.gameclient.ui.input.ClientInput;
+import com.andronikus.gameclient.ui.input.ConcurrentServerInputManager;
 import com.andronikus.gameclient.ui.input.IUserInput;
 import com.andronikus.gameclient.ui.input.ServerInput;
 import com.andronikus.gameclient.ui.keyboard.KeyBoardListener;
@@ -60,7 +61,7 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
     private volatile String sessionId;
     private final JFrame frame;
     private volatile GameState latestGameState = null;
-    private final ConcurrentInputManager serverInputManager;
+    private final ConcurrentServerInputManager serverInputManager;
 
     private final BackgroundRenderer backgroundRenderer;
     private static final int PLAYER_SIZE = 64;
@@ -127,7 +128,7 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         backgroundRenderer = new BackgroundRenderer("background.png");
-        serverInputManager = new ConcurrentInputManager();
+        serverInputManager = new ConcurrentServerInputManager();
     }
 
     /**
@@ -695,7 +696,9 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
      */
     public void addInput(IUserInput input) {
         if (input instanceof ServerInput) {
-            serverInputManager.addToQueue(((ServerInput) input).getCode());
+            final ServerInput serverInput = (ServerInput) input;
+            serverInput.setSessionId(sessionId);
+            serverInputManager.addToQueue(serverInput);
         } else {
             handleClientInput((ClientInput) input);
         }
@@ -795,7 +798,8 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
      * {@inheritDoc}
      */
     @Override
-    public List<String> getAndClearInputs() {
-        return serverInputManager.getUnhandledCodes();
+    public List<ServerInput> getAndClearInputs() {
+        serverInputManager.removeInputsFromServerState(latestGameState);
+        return serverInputManager.getUnhandledInputs();
     }
 }
