@@ -99,19 +99,25 @@ public class ConcurrentServerInputManager {
      */
     public List<ServerInput> getUnhandledInputs() {
         // Put on the queue those inputs which require acking that have not yet been acked
-        // TODO deadlocking potential? If server decides it's not going to ack inputs.... uh.... yikes. That's our input slots eaten
-        ackRequiredInputs.forEach(this::addToQueue);
-
-        // Process inputs, running head position is so amount to send is locked in
-        final int postCallHeadPosition = Math.min(inputSize, inputHeadPosition + INPUT_SIZE);
-        final int indexToCountTo = postCallHeadPosition - inputHeadPosition;
-        inputHeadPosition = postCallHeadPosition;
-
         final ArrayList<ServerInput> inputCodes = new ArrayList<>();
-        int index = 0;
-        while (index < indexToCountTo) {
-            inputCodes.add(inputQueue.poll());
-            index++;
+        int inputAllowance = INPUT_SIZE - ackRequiredInputs.size();
+
+        if (inputAllowance > 0) {
+            // Process inputs, running head position is so amount to send is locked in
+            final int postCallHeadPosition = Math.min(inputSize, inputHeadPosition + inputAllowance);
+            final int indexToCountTo = postCallHeadPosition - inputHeadPosition;
+            inputHeadPosition = postCallHeadPosition;
+
+            int index = 0;
+            while (index < indexToCountTo) {
+                inputCodes.add(inputQueue.poll());
+                index++;
+                inputAllowance--;
+            }
+        }
+        for (int index = 0; index < ackRequiredInputs.size() && inputAllowance > 0; index++) {
+            inputCodes.add(ackRequiredInputs.get(0));
+            inputAllowance--;
         }
 
         return inputCodes;
