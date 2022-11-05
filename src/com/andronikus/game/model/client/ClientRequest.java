@@ -19,6 +19,11 @@ public class ClientRequest implements Serializable {
     private InputRequest inputCode2 = null;
     private InputRequest inputCode3 = null;
     private InputRequest inputCode4 = null;
+    private InputPurgeRequest inputPurge0;
+    private InputPurgeRequest inputPurge1;
+    private InputPurgeRequest inputPurge2;
+    private InputPurgeRequest inputPurge3;
+    private InputPurgeRequest inputPurge4;
     private String sessionToken;
     private List<ClientCommand> clientCommands = new ArrayList<>();
     private List<ClientCommand> commandsToRemove = new ArrayList<>();

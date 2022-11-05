@@ -4,7 +4,7 @@ import com.andronikus.game.model.server.GameState;
 import com.andronikus.gameclient.ClientCertificateUtil;
 import com.andronikus.gameclient.client.GameClient;
 import com.andronikus.gameclient.client.GameClientStartException;
-import com.andronikus.gameclient.engine.IClientInputSupplier;
+import com.andronikus.gameclient.engine.IClientInputManager;
 import com.andronikus.gameclient.engine.IGameStateRenderer;
 import com.andronikus.gameclient.engine.IRendererPresetup;
 import com.andronikus.gameclient.ui.GameWindow;
@@ -46,12 +46,12 @@ public class AppStart {
         }
 
         IGameStateRenderer renderer;
-        IClientInputSupplier inputSupplier;
+        IClientInputManager inputManager;
         IRendererPresetup presetupOperations;
         if (renderMethod.equalsIgnoreCase("UI")) {
             final GameWindow window = new GameWindow();
             renderer = window;
-            inputSupplier = window;
+            inputManager = window;
             presetupOperations = window;
         } else if (renderMethod.equalsIgnoreCase("TXT")) {
             renderer = new IGameStateRenderer() {
@@ -66,7 +66,7 @@ public class AppStart {
                 @Override
                 public void render() {}
             };
-            inputSupplier = new IClientInputSupplier() {
+            inputManager = new IClientInputManager() {
                 @Override
                 public List<ServerInput> getAndClearInputs() {
                     return new ArrayList<>();
@@ -76,6 +76,11 @@ public class AppStart {
                 public String getCommand() {
                     return null;
                 }
+
+                @Override
+                public List<Long> getInputPurgeRequests() {
+                    return new ArrayList<>();
+                }
             };
             presetupOperations = () -> System.out.println("Engine renderer started...");
         } else {
@@ -83,7 +88,7 @@ public class AppStart {
         }
 
         ClientCertificateUtil.addSslToSystemProperties();
-        final GameClient client = new GameClient(hostname, renderer, inputSupplier, presetupOperations);
+        final GameClient client = new GameClient(hostname, renderer, inputManager, presetupOperations);
         client.start(username, password);
     }
 }

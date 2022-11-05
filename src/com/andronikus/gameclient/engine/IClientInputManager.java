@@ -9,7 +9,7 @@ import java.util.List;
  *
  * @author Andronikus
  */
-public interface IClientInputSupplier {
+public interface IClientInputManager {
 
     /**
      * Get the inputs the user has put in and then clear get the inputs ready for next call.
@@ -24,4 +24,11 @@ public interface IClientInputSupplier {
      * @return The command
      */
     String getCommand();
+
+    /**
+     * Get the next inputs to be cleared.
+     *
+     * @return The IDs of the inputs that are to be purged from server acknowledgements
+     */
+    List<Long> getInputPurgeRequests();
 }

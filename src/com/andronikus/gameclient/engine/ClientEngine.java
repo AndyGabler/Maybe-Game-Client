@@ -2,6 +2,7 @@ package com.andronikus.gameclient.engine;
 
 import com.andronikus.game.model.client.ClientRequest;
 import com.andronikus.game.model.client.InputRequest;
+import com.andronikus.game.model.client.InputPurgeRequest;
 import com.andronikus.game.model.server.GameState;
 import com.andronikus.gameclient.client.GameClient;
 import com.andronikus.gameclient.engine.command.ClientCommandManager;
@@ -28,7 +29,7 @@ public class ClientEngine implements ActionListener {
     private int sequenceNumber;
     private final GameClient client;
     private final IGameStateRenderer renderer;
-    private final IClientInputSupplier inputSupplier;
+    private final IClientInputManager inputManager;
     private final IRendererPresetup setupOperations;
     private final Timer timer;
     private ClientCommandManager commandManager = null;
@@ -45,10 +46,10 @@ public class ClientEngine implements ActionListener {
      * @param aInputSupplier Supplier for user inputs
      * @param aSetupOperations Operations to setup the renderer
      */
-    public ClientEngine(GameClient aClient, IGameStateRenderer aRenderer, IClientInputSupplier aInputSupplier, IRendererPresetup aSetupOperations) {
+    public ClientEngine(GameClient aClient, IGameStateRenderer aRenderer, IClientInputManager aInputSupplier, IRendererPresetup aSetupOperations) {
         client = aClient;
         renderer = aRenderer;
-        inputSupplier = aInputSupplier;
+        inputManager = aInputSupplier;
         setupOperations = aSetupOperations;
         sequenceNumber = 0;
         timer = makeTimer(30, this); // TODO non-static or different frame rate?
@@ -78,7 +79,7 @@ public class ClientEngine implements ActionListener {
         )) {
             // Clear queued inputs
             sequenceNumber = sequenceNumber + 1;
-            inputSupplier.getAndClearInputs();
+            inputManager.getAndClearInputs();
 
             final ClientRequest request = new ClientRequest();
             request.setSessionToken(client.getSessionSecret());
@@ -93,9 +94,10 @@ public class ClientEngine implements ActionListener {
             return;
         }
 
-        final List<ServerInput> inputCodes = inputSupplier.getAndClearInputs();
-        final String commandCode = inputSupplier.getCommand();
-        if (inputCodes.size() > 0 || commandCode != null) {
+        final List<ServerInput> inputCodes = inputManager.getAndClearInputs();
+        final String commandCode = inputManager.getCommand();
+        final List<Long> inputIdsToPurge = inputManager.getInputPurgeRequests();
+        if (inputCodes.size() > 0 || commandCode != null || inputIdsToPurge.size() > 0) {
             sequenceNumber = sequenceNumber + 1;
 
             final ClientRequest request = new ClientRequest();
@@ -118,6 +120,24 @@ public class ClientEngine implements ActionListener {
                     request.setInputCode3(inputRequest);
                 } else if (index == 4) {
                     request.setInputCode4(inputRequest);
+                }
+            }
+
+            for (int index = 0; index < inputIdsToPurge.size(); index++) {
+                final Long idToPurge = inputIdsToPurge.get(index);
+                final InputPurgeRequest purgeRequest = new InputPurgeRequest();
+                purgeRequest.setId(idToPurge);
+
+                if (index == 0) {
+                    request.setInputPurge0(purgeRequest);
+                } else if (index == 1) {
+                    request.setInputPurge1(purgeRequest);
+                } else if (index == 2) {
+                    request.setInputPurge2(purgeRequest);
+                } else if (index == 3) {
+                    request.setInputPurge3(purgeRequest);
+                } else if (index == 4) {
+                    request.setInputPurge4(purgeRequest);
                 }
             }
 

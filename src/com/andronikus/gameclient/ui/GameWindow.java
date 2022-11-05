@@ -8,7 +8,7 @@ import com.andronikus.game.model.server.MicroBlackHole;
 import com.andronikus.game.model.server.Player;
 import com.andronikus.game.model.server.Portal;
 import com.andronikus.game.model.server.Snake;
-import com.andronikus.gameclient.engine.IClientInputSupplier;
+import com.andronikus.gameclient.engine.IClientInputManager;
 import com.andronikus.gameclient.engine.IGameStateRenderer;
 import com.andronikus.gameclient.engine.IRendererPresetup;
 import com.andronikus.gameclient.ui.input.ClientInput;
@@ -47,7 +47,7 @@ import java.util.Optional;
  *
  * @author Andronikus
  */
-public class GameWindow extends JPanel implements IGameStateRenderer, IClientInputSupplier, IRendererPresetup {
+public class GameWindow extends JPanel implements IGameStateRenderer, IClientInputManager, IRendererPresetup {
 
     @Getter
     private volatile int width;
@@ -801,5 +801,13 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
     public List<ServerInput> getAndClearInputs() {
         serverInputManager.removeInputsFromServerState(latestGameState);
         return serverInputManager.getUnhandledInputs();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public List<Long> getInputPurgeRequests() {
+        return serverInputManager.getInputIdsToPurge();
     }
 }

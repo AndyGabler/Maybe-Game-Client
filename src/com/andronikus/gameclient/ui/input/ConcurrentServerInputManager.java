@@ -16,12 +16,16 @@ import java.util.concurrent.LinkedTransferQueue;
 public class ConcurrentServerInputManager {
 
     private static final int INPUT_SIZE = 5;
+    private static final int PURGE_SIZE = INPUT_SIZE; // Same since should be able to purge what you make
 
     private final ConcurrentLinkedQueue<ServerInput> inputQueue;
     private final LinkedTransferQueue<ServerInput> ackRequiredInputTransferQueue;
+    private final ConcurrentLinkedQueue<Long> inputPurgeQueue;
     private final ArrayList<ServerInput> ackRequiredInputs;
-    private volatile int headPosition;
-    private volatile int size;
+    private volatile int inputHeadPosition;
+    private volatile int inputPurgeHeadPosition;
+    private volatile int inputSize;
+    private volatile int purgeQueueSize;
     private final ResourceLock<InputIdManager> idManagerLock;
 
     /**
@@ -31,9 +35,12 @@ public class ConcurrentServerInputManager {
         inputQueue = new ConcurrentLinkedQueue<>();
         ackRequiredInputTransferQueue = new LinkedTransferQueue<>();
         ackRequiredInputs = new ArrayList<>();
+        inputPurgeQueue = new ConcurrentLinkedQueue<>();
         idManagerLock = new ResourceLock<>(new InputIdManager());
-        headPosition = 0;
-        size = 0;
+        inputHeadPosition = 0;
+        inputPurgeHeadPosition = 0;
+        inputSize = 0;
+        purgeQueueSize = 0;
     }
 
 
@@ -48,7 +55,7 @@ public class ConcurrentServerInputManager {
         performQueueTransfer();
 
         ackRequiredInputs.removeIf(input ->
-            input.checkAck(state)
+            checkAckAndQueuePurge(state, input)
         );
     }
 
@@ -81,7 +88,7 @@ public class ConcurrentServerInputManager {
     }
 
     private void enqueueInput(ServerInput input) {
-        size = size + 1; // TODO okay, yikes. volatile called from 2 threads (input and server broadcast)
+        inputSize = inputSize + 1; // TODO okay, yikes. volatile called from 2 threads (input and server broadcast)
         inputQueue.add(input);
     }
 
@@ -95,10 +102,10 @@ public class ConcurrentServerInputManager {
         // TODO deadlocking potential? If server decides it's not going to ack inputs.... uh.... yikes. That's our input slots eaten
         ackRequiredInputs.forEach(this::addToQueue);
 
-        // Process inputs
-        final int postCallHeadPosition = Math.min(size, headPosition + INPUT_SIZE);
-        final int indexToCountTo = postCallHeadPosition - headPosition;
-        headPosition = postCallHeadPosition;
+        // Process inputs, running head position is so amount to send is locked in
+        final int postCallHeadPosition = Math.min(inputSize, inputHeadPosition + INPUT_SIZE);
+        final int indexToCountTo = postCallHeadPosition - inputHeadPosition;
+        inputHeadPosition = postCallHeadPosition;
 
         final ArrayList<ServerInput> inputCodes = new ArrayList<>();
         int index = 0;
@@ -108,5 +115,31 @@ public class ConcurrentServerInputManager {
         }
 
         return inputCodes;
+    }
+
+    private boolean checkAckAndQueuePurge(GameState state, ServerInput input) {
+        final boolean isAcked = input.checkAck(state);
+
+        if (input.isDirectAckRequired()) {
+            inputPurgeQueue.add(input.getInputId());
+            purgeQueueSize += 1;
+        }
+
+        return isAcked;
+    }
+
+    public List<Long> getInputIdsToPurge() {
+        final int postCallHeadPosition = Math.min(purgeQueueSize, inputPurgeHeadPosition + PURGE_SIZE);
+        final int indexToCountTo = postCallHeadPosition - inputPurgeHeadPosition;
+        inputPurgeHeadPosition = postCallHeadPosition;
+
+        final ArrayList<Long> inputIds = new ArrayList<>();
+        int index = 0;
+        while (index < indexToCountTo) {
+            inputIds.add(inputPurgeQueue.poll());
+            index++;
+        }
+
+        return inputIds;
     }
 }
