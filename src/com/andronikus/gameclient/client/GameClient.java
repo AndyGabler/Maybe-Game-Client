@@ -4,7 +4,7 @@ import com.andronikus.game.model.client.ClientRequest;
 import com.andronikus.game.model.server.GameState;
 import com.andronikus.gameclient.dhke.DhkeClient;
 import com.andronikus.gameclient.engine.ClientEngine;
-import com.andronikus.gameclient.engine.IClientInputSupplier;
+import com.andronikus.gameclient.engine.IClientInputManager;
 import com.andronikus.gameclient.engine.IGameStateRenderer;
 import com.andronikus.gameclient.engine.IRendererPresetup;
 import com.gabler.client.ClientStartException;
@@ -56,7 +56,7 @@ public class GameClient implements IUdpClientConfiguration {
     public GameClient(
         String aHostname,
         IGameStateRenderer aRenderer,
-        IClientInputSupplier aInputSupplier,
+        IClientInputManager aInputSupplier,
         IRendererPresetup aSetupOperations
     ) {
         this(
@@ -85,7 +85,7 @@ public class GameClient implements IUdpClientConfiguration {
         Function<Serializable, byte[]> anObjectToBytesTransformer,
         String aHostname,
         IGameStateRenderer aRenderer,
-        IClientInputSupplier aInputSupplier,
+        IClientInputManager aInputSupplier,
         IRendererPresetup aSetupOperations
     ) {
         byteToGameStateTransformer = aByteToGameStateTransformer;

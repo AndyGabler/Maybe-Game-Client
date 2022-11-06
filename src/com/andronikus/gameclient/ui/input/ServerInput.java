@@ -1,6 +1,10 @@
 package com.andronikus.gameclient.ui.input;
 
+import com.andronikus.game.model.server.GameState;
 import lombok.Getter;
+import lombok.Setter;
+
+import java.util.function.BiFunction;
 
 /**
  * Input to the server.
@@ -10,7 +14,26 @@ import lombok.Getter;
 public class ServerInput implements IUserInput {
 
     @Getter
-    private String code;
+    private final String code;
+
+    @Getter
+    private boolean directAckRequired = false;
+
+    private final BiFunction<GameState, ServerInput, Boolean> repeatUntilFulfilledCondition;
+
+    /**
+     * ID of the input to assign pre-flight.
+     */
+    @Getter
+    @Setter
+    private Long inputId = null;
+
+    /**
+     * Session ID of the input.
+     */
+    @Getter
+    @Setter
+    private String sessionId;
 
     /**
      * Instantiate an input to the server.
@@ -18,6 +41,59 @@ public class ServerInput implements IUserInput {
      * @param aCode The input code
      */
     public ServerInput(String aCode) {
-        this.code = aCode;
+        this(aCode, null);
+    }
+
+    /**
+     * Instantiate an input to the server.
+     *
+     * @param aCode The input code
+     * @param aRequiresAck If the input requires ack from the server
+     */
+    public ServerInput(String aCode, boolean aRequiresAck) {
+        this(aCode, serverAcknowledgementScanner(aRequiresAck));
+        directAckRequired = aRequiresAck;
+    }
+
+    private static BiFunction<GameState, ServerInput, Boolean> serverAcknowledgementScanner(boolean scannerNeeded) {
+        if (!scannerNeeded) {
+            return null;
+        }
+
+        return ((gameState, input) ->
+            gameState.getInputAcknowledgements()
+                .stream()
+                .anyMatch(ack -> ack.getInputId() == input.inputId && ack.getSessionId().equalsIgnoreCase(input.sessionId))
+        );
+    }
+
+    /**
+     * Instantiate an input to the server.
+     *
+     * @param aCode The input code
+     * @param aRepeatUntilFulfilledCondition Condition that, when fulfilled, will stop the repetition of an input
+     */
+    public ServerInput(String aCode, BiFunction<GameState, ServerInput, Boolean> aRepeatUntilFulfilledCondition) {
+        code = aCode;
+        repeatUntilFulfilledCondition = aRepeatUntilFulfilledCondition;
+    }
+
+    /**
+     * Check if input has been processed by the server.
+     *
+     * @param state The state of the game
+     * @return True if input's been processed
+     */
+    public boolean checkProcessed(GameState state) {
+        return repeatUntilFulfilledCondition.apply(state, this);
+    }
+
+    /**
+     * Does the input require some condition on the game state from the server to be true before it's forgotten?
+     *
+     * @return True if input requires game state condition to stop repeating
+     */
+    public boolean isServerConditionCheckRequired() {
+        return repeatUntilFulfilledCondition != null;
     }
 }

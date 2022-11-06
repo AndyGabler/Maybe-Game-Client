@@ -1,9 +1,12 @@
 package com.andronikus.gameclient.engine;
 
 import com.andronikus.game.model.client.ClientRequest;
+import com.andronikus.game.model.client.InputRequest;
+import com.andronikus.game.model.client.InputPurgeRequest;
 import com.andronikus.game.model.server.GameState;
 import com.andronikus.gameclient.client.GameClient;
 import com.andronikus.gameclient.engine.command.ClientCommandManager;
+import com.andronikus.gameclient.ui.input.ServerInput;
 
 import javax.swing.Timer;
 import java.awt.event.ActionEvent;
@@ -26,7 +29,7 @@ public class ClientEngine implements ActionListener {
     private int sequenceNumber;
     private final GameClient client;
     private final IGameStateRenderer renderer;
-    private final IClientInputSupplier inputSupplier;
+    private final IClientInputManager inputManager;
     private final IRendererPresetup setupOperations;
     private final Timer timer;
     private ClientCommandManager commandManager = null;
@@ -40,13 +43,13 @@ public class ClientEngine implements ActionListener {
      *
      * @param aClient The client the engine is connected to
      * @param aRenderer The render that renders game states
-     * @param aInputSupplier Supplier for user inputs
+     * @param anInputManager Manager for user inputs
      * @param aSetupOperations Operations to setup the renderer
      */
-    public ClientEngine(GameClient aClient, IGameStateRenderer aRenderer, IClientInputSupplier aInputSupplier, IRendererPresetup aSetupOperations) {
+    public ClientEngine(GameClient aClient, IGameStateRenderer aRenderer, IClientInputManager anInputManager, IRendererPresetup aSetupOperations) {
         client = aClient;
         renderer = aRenderer;
-        inputSupplier = aInputSupplier;
+        inputManager = anInputManager;
         setupOperations = aSetupOperations;
         sequenceNumber = 0;
         timer = makeTimer(30, this); // TODO non-static or different frame rate?
@@ -76,36 +79,65 @@ public class ClientEngine implements ActionListener {
         )) {
             // Clear queued inputs
             sequenceNumber = sequenceNumber + 1;
-            inputSupplier.getAndClearInputs();
+            inputManager.getAndClearInputs();
 
             final ClientRequest request = new ClientRequest();
             request.setSessionToken(client.getSessionSecret());
             request.setSequenceNumber(sequenceNumber);
-            request.setInputCode0("JOINGAME");
+
+            final InputRequest joinGameRequest = new InputRequest();
+            joinGameRequest.setInputCode("JOINGAME");
+
+            request.setInputCode0(joinGameRequest);
 
             client.sendClientRequest(request);
             return;
         }
 
-        final List<String> inputCodes = inputSupplier.getAndClearInputs();
-        final String commandCode = inputSupplier.getCommand();
-        if (inputCodes.size() > 0 || commandCode != null) {
+        final List<ServerInput> inputCodes = inputManager.getAndClearInputs();
+        final String commandCode = inputManager.getCommand();
+        final List<Long> inputIdsToPurge = inputManager.getInputPurgeRequests();
+        if (inputCodes.size() > 0 || commandCode != null || inputIdsToPurge.size() > 0) {
             sequenceNumber = sequenceNumber + 1;
 
             final ClientRequest request = new ClientRequest();
             request.setSessionToken(client.getSessionSecret());
             request.setSequenceNumber(sequenceNumber);
             for (int index = 0; index < inputCodes.size(); index++) {
+                final ServerInput nextServerInput = inputCodes.get(index);
+                final InputRequest inputRequest = new InputRequest();
+                inputRequest.setInputId(nextServerInput.getInputId());
+                inputRequest.setInputCode(nextServerInput.getCode());
+                inputRequest.setAckRequired(nextServerInput.isDirectAckRequired());
+
                 if (index == 0) {
-                    request.setInputCode0(inputCodes.get(index));
+                    request.setInputCode0(inputRequest);
                 } else if (index == 1) {
-                    request.setInputCode1(inputCodes.get(index));
+                    request.setInputCode1(inputRequest);
                 } else if (index == 2) {
-                    request.setInputCode2(inputCodes.get(index));
+                    request.setInputCode2(inputRequest);
                 } else if (index == 3) {
-                    request.setInputCode3(inputCodes.get(index));
+                    request.setInputCode3(inputRequest);
                 } else if (index == 4) {
-                    request.setInputCode4(inputCodes.get(index));
+                    request.setInputCode4(inputRequest);
+                }
+            }
+
+            for (int index = 0; index < inputIdsToPurge.size(); index++) {
+                final Long idToPurge = inputIdsToPurge.get(index);
+                final InputPurgeRequest purgeRequest = new InputPurgeRequest();
+                purgeRequest.setId(idToPurge);
+
+                if (index == 0) {
+                    request.setInputPurge0(purgeRequest);
+                } else if (index == 1) {
+                    request.setInputPurge1(purgeRequest);
+                } else if (index == 2) {
+                    request.setInputPurge2(purgeRequest);
+                } else if (index == 3) {
+                    request.setInputPurge3(purgeRequest);
+                } else if (index == 4) {
+                    request.setInputPurge4(purgeRequest);
                 }
             }
 
