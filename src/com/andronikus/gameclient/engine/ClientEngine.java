@@ -43,13 +43,13 @@ public class ClientEngine implements ActionListener {
      *
      * @param aClient The client the engine is connected to
      * @param aRenderer The render that renders game states
-     * @param aInputSupplier Supplier for user inputs
+     * @param anInputManager Manager for user inputs
      * @param aSetupOperations Operations to setup the renderer
      */
-    public ClientEngine(GameClient aClient, IGameStateRenderer aRenderer, IClientInputManager aInputSupplier, IRendererPresetup aSetupOperations) {
+    public ClientEngine(GameClient aClient, IGameStateRenderer aRenderer, IClientInputManager anInputManager, IRendererPresetup aSetupOperations) {
         client = aClient;
         renderer = aRenderer;
-        inputManager = aInputSupplier;
+        inputManager = anInputManager;
         setupOperations = aSetupOperations;
         sequenceNumber = 0;
         timer = makeTimer(30, this); // TODO non-static or different frame rate?

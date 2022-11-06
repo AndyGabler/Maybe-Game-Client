@@ -78,10 +78,21 @@ public class ServerInput implements IUserInput {
         repeatUntilFulfilledCondition = aRepeatUntilFulfilledCondition;
     }
 
-    public boolean checkAck(GameState state) {
+    /**
+     * Check if input has been processed by the server.
+     *
+     * @param state The state of the game
+     * @return True if input's been processed
+     */
+    public boolean checkProcessed(GameState state) {
         return repeatUntilFulfilledCondition.apply(state, this);
     }
 
+    /**
+     * Does the input require some condition on the game state from the server to be true before it's forgotten?
+     *
+     * @return True if input requires game state condition to stop repeating
+     */
     public boolean isServerConditionCheckRequired() {
         return repeatUntilFulfilledCondition != null;
     }

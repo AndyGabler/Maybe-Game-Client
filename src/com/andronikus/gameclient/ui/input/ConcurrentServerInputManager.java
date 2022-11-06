@@ -59,6 +59,9 @@ public class ConcurrentServerInputManager {
         );
     }
 
+    /**
+     * Perform the transfer from the queue of inputs that require acks to the listing.
+     */
     // TODO publicly expose?
     private void performQueueTransfer() {
         ServerInput input = ackRequiredInputTransferQueue.poll();
@@ -87,8 +90,13 @@ public class ConcurrentServerInputManager {
         }
     }
 
+    /**
+     * Add input to the queue.
+     *
+     * @param input The input
+     */
     private void enqueueInput(ServerInput input) {
-        inputSize = inputSize + 1; // TODO okay, yikes. volatile called from 2 threads (input and server broadcast)
+        inputSize = inputSize + 1;
         inputQueue.add(input);
     }
 
@@ -123,8 +131,15 @@ public class ConcurrentServerInputManager {
         return inputCodes;
     }
 
+    /**
+     * Check for acknowledgements on the game state and handle purges.
+     *
+     * @param state The state of the game
+     * @param input The input
+     * @return If the acknowledgement is ready to be purged
+     */
     private boolean checkAckAndQueuePurge(GameState state, ServerInput input) {
-        final boolean isAcked = input.checkAck(state);
+        final boolean isAcked = input.checkProcessed(state);
 
         if (input.isDirectAckRequired()) {
             inputPurgeQueue.add(input.getInputId());
@@ -134,6 +149,11 @@ public class ConcurrentServerInputManager {
         return isAcked;
     }
 
+    /**
+     * Get IDs of the inputs that no longer need acknowledgement.
+     *
+     * @return List of input IDs to purge
+     */
     public List<Long> getInputIdsToPurge() {
         final int postCallHeadPosition = Math.min(purgeQueueSize, inputPurgeHeadPosition + PURGE_SIZE);
         final int indexToCountTo = postCallHeadPosition - inputPurgeHeadPosition;
