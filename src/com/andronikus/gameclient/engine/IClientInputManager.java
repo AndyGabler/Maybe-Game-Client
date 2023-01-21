@@ -31,4 +31,11 @@ public interface IClientInputManager {
      * @return The IDs of the inputs that are to be purged from server acknowledgements
      */
     List<Long> getInputPurgeRequests();
+
+    /**
+     * Get inputs that should be sent upon the engine tick.
+     *
+     * @return The input
+     */
+    List<ServerInput> getTickInputs();
 }

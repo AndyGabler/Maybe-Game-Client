@@ -4,6 +4,7 @@ import com.andronikus.game.model.server.GameState;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.io.Serializable;
 import java.util.function.BiFunction;
 
 /**
@@ -34,6 +35,10 @@ public class ServerInput implements IUserInput {
     @Getter
     @Setter
     private String sessionId;
+
+    @Getter
+    @Setter
+    private Serializable parameter0;
 
     /**
      * Instantiate an input to the server.

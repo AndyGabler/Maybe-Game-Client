@@ -31,7 +31,7 @@ public class MouseListenerImpl implements MouseMotionListener, MouseListener {
      */
     @Override
     public void mouseDragged(MouseEvent mouseEvent) {
-
+        window.setLaserShotCoordinates(mouseEvent.getX(), mouseEvent.getY());
     }
 
     /**
@@ -55,7 +55,7 @@ public class MouseListenerImpl implements MouseMotionListener, MouseListener {
      */
     @Override
     public void mousePressed(MouseEvent mouseEvent) {
-
+        window.setLaserShotCoordinates(mouseEvent.getX(), mouseEvent.getY());
     }
 
     /**
@@ -63,7 +63,7 @@ public class MouseListenerImpl implements MouseMotionListener, MouseListener {
      */
     @Override
     public void mouseReleased(MouseEvent mouseEvent) {
-
+        window.setLaserShotCoordinates(null, null);
     }
 
     /**

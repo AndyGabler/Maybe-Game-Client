@@ -95,6 +95,7 @@ public class ClientEngine implements ActionListener {
         }
 
         final List<ServerInput> inputCodes = inputManager.getAndClearInputs();
+        inputCodes.addAll(inputManager.getTickInputs());
         final String commandCode = inputManager.getCommand();
         final List<Long> inputIdsToPurge = inputManager.getInputPurgeRequests();
         if (inputCodes.size() > 0 || commandCode != null || inputIdsToPurge.size() > 0) {
@@ -108,6 +109,7 @@ public class ClientEngine implements ActionListener {
                 final InputRequest inputRequest = new InputRequest();
                 inputRequest.setInputId(nextServerInput.getInputId());
                 inputRequest.setInputCode(nextServerInput.getCode());
+                inputRequest.setParameter0(nextServerInput.getParameter0());
                 inputRequest.setAckRequired(nextServerInput.isDirectAckRequired());
 
                 if (index == 0) {

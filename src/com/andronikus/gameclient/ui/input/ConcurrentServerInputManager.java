@@ -1,6 +1,7 @@
 package com.andronikus.gameclient.ui.input;
 
 import com.andronikus.game.model.server.GameState;
+import com.andronikus.util.ResourceCell;
 import com.gabler.udpmanager.ResourceLock;
 
 import java.util.ArrayList;
@@ -26,7 +27,7 @@ public class ConcurrentServerInputManager {
     private volatile int inputPurgeHeadPosition;
     private volatile int inputSize;
     private volatile int purgeQueueSize;
-    private final ResourceLock<InputIdManager> idManagerLock;
+    private final ResourceLock<ResourceCell<Long>> idManagerLock;
 
     /**
      * Instantiate input manager.
@@ -36,7 +37,7 @@ public class ConcurrentServerInputManager {
         ackRequiredInputTransferQueue = new LinkedTransferQueue<>();
         ackRequiredInputs = new ArrayList<>();
         inputPurgeQueue = new ConcurrentLinkedQueue<>();
-        idManagerLock = new ResourceLock<>(new InputIdManager());
+        idManagerLock = new ResourceLock<>(new ResourceCell<>(0L));
         inputHeadPosition = 0;
         inputPurgeHeadPosition = 0;
         inputSize = 0;
@@ -78,9 +79,9 @@ public class ConcurrentServerInputManager {
      */
     public void addToQueue(ServerInput input) {
         idManagerLock.performRunInLock(idManager -> {
-            final long id = idManager.getIdCounter();
+            final long id = idManager.getDatum();
             input.setInputId(id);
-            idManager.setIdCounter(id + 1);
+            idManager.setDatum(id + 1);
         });
 
         if (input.isServerConditionCheckRequired()) {

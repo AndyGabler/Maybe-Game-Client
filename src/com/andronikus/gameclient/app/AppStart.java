@@ -81,6 +81,11 @@ public class AppStart {
                 public List<Long> getInputPurgeRequests() {
                     return new ArrayList<>();
                 }
+
+                @Override
+                public List<ServerInput> getTickInputs() {
+                    return new ArrayList<>();
+                }
             };
             presetupOperations = () -> System.out.println("Engine renderer started...");
         } else {
