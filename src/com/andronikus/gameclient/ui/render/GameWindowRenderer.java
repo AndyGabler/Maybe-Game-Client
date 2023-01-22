@@ -39,8 +39,8 @@ public class GameWindowRenderer {
     private volatile RenderRatio renderRatio;
     private final BackgroundRenderer backgroundRenderer;
     private static final int PLAYER_SIZE = 64;
-    private static final int LASER_WIDTH = 48;
-    private static final int LASER_HEIGHT = 32;
+    private static final int LASER_WIDTH = 16;
+    private static final int LASER_HEIGHT = 50;
     private static final int SMALL_ASTEROID_SIZE = 64;
     private static final int LARGE_ASTEROID_WIDTH = 96;
     private static final int LARGE_ASTEROID_HEIGHT = 192;

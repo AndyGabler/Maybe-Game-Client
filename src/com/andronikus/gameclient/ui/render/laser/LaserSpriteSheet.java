@@ -11,11 +11,11 @@ import java.awt.image.BufferedImage;
  */
 public class LaserSpriteSheet extends SpriteSheet {
 
-    private static final int TILE_WIDTH = 48;
-    private static final int TILE_HEIGHT = 32;
+    private static final int TILE_WIDTH = 16;
+    private static final int TILE_HEIGHT = 50;
 
     public LaserSpriteSheet() {
-        super("projectile/laser-spritesheet.png", TILE_WIDTH, TILE_HEIGHT);
+        super("projectile/laser-spritesheet2.png", TILE_WIDTH, TILE_HEIGHT);
     }
 
     /**

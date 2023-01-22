@@ -40,7 +40,7 @@ public class Laser implements IMoveable {
      */
     @Override
     public int getBoxWidth() {
-        return 48;
+        return 16;
     }
 
     /**
@@ -48,7 +48,7 @@ public class Laser implements IMoveable {
      */
     @Override
     public int getBoxHeight() {
-        return 32;
+        return 50;
     }
 
     /**

@@ -195,14 +195,6 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
     }
 
     public void setLaserShotCoordinates(Integer laserShotScreenX, Integer laserShotScreenY) {
-        // TODO
-        System.out.println("Instance:");
-        System.out.println("\tlaserShotScreenX: " + laserShotScreenX);
-        System.out.println("\tlaserShotScreenY: " + laserShotScreenY);
-        System.out.println("\twidth: " + width);
-        System.out.println("\theight: " + height);
-        System.out.println("\twidth/2: " + (width/2));
-        System.out.println("\theight/2: " + (height/2));
         if (laserShotScreenX == null || laserShotScreenY == null) {
             // Don't lock it for this, since we don't want a deadlock, but set null
             laserShotAngle = null;
@@ -214,7 +206,6 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
             return;
         }
 
-        //laserShotReleased = false;
         final double xClickDelta = (double) (laserShotScreenX - (width / 2));
         final double yClickDelta = (double) (laserShotScreenY - (height / 2));
         final double clickDistance = Math.sqrt(Math.pow(xClickDelta, 2) + Math.pow(yClickDelta, 2));
@@ -293,7 +284,6 @@ public class GameWindow extends JPanel implements IGameStateRenderer, IClientInp
             // TODO okay but what if we need this to have the next id
             shootInput.setInputId(-1L);
             newInputs.add(shootInput);
-            System.out.println("shoot input given");
         }
 
         return newInputs;
