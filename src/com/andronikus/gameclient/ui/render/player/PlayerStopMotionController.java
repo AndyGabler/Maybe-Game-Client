@@ -22,7 +22,7 @@ public class PlayerStopMotionController extends StopMotionController<GameState, 
     public PlayerStopMotionController(Player player) {
         super(new PlayerSpriteSheet());
 
-        // Can't store player since it's reserialized every gamestate update. So store the
+        // Can't store player since it's reserialized every gamestate update. So store the session ID
         sessionId = player.getSessionId();
     }
 

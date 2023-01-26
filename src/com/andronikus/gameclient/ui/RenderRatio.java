@@ -44,4 +44,17 @@ public class RenderRatio {
         copy.heightScale = this.heightScale;
         return copy;
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean equals(Object object) {
+        if (!(object instanceof RenderRatio)) {
+            return false;
+        }
+
+        final RenderRatio inputRatio = (RenderRatio) object;
+        return inputRatio.widthScale == widthScale && inputRatio.heightScale == heightScale;
+    }
 }

@@ -10,7 +10,7 @@ import com.andronikus.game.model.server.Laser;
  *
  * @author Andronikus
  */
-public class LaserAnimationController extends StopMotionController<GameState, Laser, LaserSpriteSheet> {
+public class LaserStopMotionController extends StopMotionController<GameState, Laser, LaserSpriteSheet> {
 
     private final long animatedLaserId;
 
@@ -19,7 +19,7 @@ public class LaserAnimationController extends StopMotionController<GameState, La
      *
      * @param laser The laser being animated
      */
-    public LaserAnimationController(Laser laser) {
+    public LaserStopMotionController(Laser laser) {
         super(new LaserSpriteSheet());
 
         animatedLaserId = laser.getId();

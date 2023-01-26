@@ -12,9 +12,6 @@ import java.awt.event.MouseMotionListener;
  */
 public class MouseListenerImpl implements MouseMotionListener, MouseListener {
 
-    // TODO: Any kind mouse client needs to give the server some kind of indication of what it clicked which the server
-    // TODO: will need to verify is within FOV. Let's not implement mouse input mapping... for now
-
     private final GameWindow window;
 
     /**

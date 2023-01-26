@@ -1,6 +1,7 @@
 package com.andronikus.gameclient.ui.render.player;
 
 import com.andronikus.animation4j.spritesheet.SpriteSheet;
+import com.andronikus.gameclient.ui.render.GameWindowRenderer;
 
 import java.awt.image.BufferedImage;
 
@@ -11,7 +12,7 @@ import java.awt.image.BufferedImage;
  */
 public class PlayerSpriteSheet extends SpriteSheet {
 
-    public static final int TILE_SIZE = 64;
+    public static final int TILE_SIZE = GameWindowRenderer.PLAYER_SIZE;
 
     public PlayerSpriteSheet() {
         super("player/player-spritesheet.png", TILE_SIZE);

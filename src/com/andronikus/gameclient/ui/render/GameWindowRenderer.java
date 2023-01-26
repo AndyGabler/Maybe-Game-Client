@@ -1,6 +1,15 @@
 package com.andronikus.gameclient.ui.render;
 
-import com.andronikus.game.model.server.*;
+import com.andronikus.animation4j.animation.AnimationController;
+import com.andronikus.animation4j.rig.graphics.GraphicsContext;
+import com.andronikus.game.model.server.Asteroid;
+import com.andronikus.game.model.server.BoundingBoxBorder;
+import com.andronikus.game.model.server.GameState;
+import com.andronikus.game.model.server.Laser;
+import com.andronikus.game.model.server.MicroBlackHole;
+import com.andronikus.game.model.server.Player;
+import com.andronikus.game.model.server.Portal;
+import com.andronikus.game.model.server.Snake;
 import com.andronikus.gameclient.ui.GameWindow;
 import com.andronikus.gameclient.ui.RenderRatio;
 import com.andronikus.gameclient.ui.render.asteroid.LargeAsteroidStopMotionController;
@@ -9,8 +18,8 @@ import com.andronikus.gameclient.ui.render.background.BackgroundRenderer;
 import com.andronikus.gameclient.ui.render.blackhole.MicroBlackHoleStopMotionController;
 import com.andronikus.gameclient.ui.render.hud.HudRenderer;
 import com.andronikus.gameclient.ui.render.hud.TrackerSpriteSheet;
-import com.andronikus.gameclient.ui.render.laser.LaserAnimationController;
-import com.andronikus.gameclient.ui.render.player.PlayerStopMotionController;
+import com.andronikus.gameclient.ui.render.laser.LaserStopMotionController;
+import com.andronikus.gameclient.ui.render.player.PlayerAnimationController;
 import com.andronikus.gameclient.ui.render.portal.PortalStopMotionController;
 import com.andronikus.gameclient.ui.render.snake.SnakeStopMotionController;
 import lombok.Getter;
@@ -38,7 +47,7 @@ public class GameWindowRenderer {
     @Getter
     private volatile RenderRatio renderRatio;
     private final BackgroundRenderer backgroundRenderer;
-    private static final int PLAYER_SIZE = 64;
+    public static final int PLAYER_SIZE = 64;
     private static final int LASER_WIDTH = 16;
     private static final int LASER_HEIGHT = 50;
     private static final int SMALL_ASTEROID_SIZE = 64;
@@ -58,13 +67,13 @@ public class GameWindowRenderer {
 
     private static final Color COLLISION_MARKER_COLOR = new Color(239, 58, 58, 136);
 
-    private PlayerStopMotionController mainPlayerStopMotionController = null;
-    private final java.util.List<PlayerStopMotionController> playerStopMotionControllers = new ArrayList<>();
-    private final java.util.List<LaserAnimationController> laserAnimationControllers = new ArrayList<>();
-    private final java.util.List<SmallAsteroidStopMotionController> smallAsteroidStopMotionControllers = new ArrayList<>();
-    private final java.util.List<LargeAsteroidStopMotionController> largeAsteroidStopMotionControllers = new ArrayList<>();
-    private final java.util.List<SnakeStopMotionController> snakeStopMotionControllers = new ArrayList<>();
-    private final java.util.List<PortalStopMotionController> portalStopMotionControllers = new ArrayList<>();
+    private PlayerAnimationController mainPlayerAnimationController = null;
+    private final List<PlayerAnimationController> playerAnimationControllers = new ArrayList<>();
+    private final List<LaserStopMotionController> laserStopMotionControllers = new ArrayList<>();
+    private final List<SmallAsteroidStopMotionController> smallAsteroidStopMotionControllers = new ArrayList<>();
+    private final List<LargeAsteroidStopMotionController> largeAsteroidStopMotionControllers = new ArrayList<>();
+    private final List<SnakeStopMotionController> snakeStopMotionControllers = new ArrayList<>();
+    private final List<PortalStopMotionController> portalStopMotionControllers = new ArrayList<>();
     private final List<MicroBlackHoleStopMotionController> blackHoleStopMotionControllers = new ArrayList<>();
 
     private final HudRenderer hudRenderer = new HudRenderer();
@@ -81,7 +90,14 @@ public class GameWindowRenderer {
 
     public void render(Graphics graphics, GameState state, String mainPlayerSessionId) {
         // TODO generify iterative animations
-        renderRatio = window.getCandidateRenderRatio().copy();
+
+        // When a resize is detected, set the render ratio to the current size. Nuke animation controllers since they will need to rebuild rigs
+        final RenderRatio newRenderRatio = window.getCandidateRenderRatio().copy();
+        if (!newRenderRatio.equals(renderRatio)) {
+            playerAnimationControllers.clear();
+            mainPlayerAnimationController = null;
+            renderRatio = window.getCandidateRenderRatio().copy();
+        }
 
         // Check if the game state is loaded in (that is, has the server acked us, if not, blue screen)
         final int width = window.getWidth();
@@ -91,6 +107,11 @@ public class GameWindowRenderer {
             graphics.fillRect(0, 0, width, height);
             return;
         }
+
+        final GraphicsContext graphicsContext = new GraphicsContext();
+        graphicsContext.setGraphics2d((Graphics2D) graphics);
+        graphicsContext.setComponentHeight(height);
+        graphicsContext.setObserver(window);
 
         // Precompute some variables like current player to reduce operation time for complex operations
         final Optional<Player> currentPlayerOpt = state.getPlayers().stream().filter(player1 -> player1.getSessionId().equals(mainPlayerSessionId)).findFirst();
@@ -116,7 +137,7 @@ public class GameWindowRenderer {
         // Render lasers that hit something
         state.getLasers().forEach(laser -> {
             if (laser.getXVelocity() != 0 || laser.getYVelocity() != 0) {
-                final BufferedImage sprite = getOrCreateAnimationControllerForLaser(laser).nextSprite(state, laser);
+                final BufferedImage sprite = getOrCreateStopMotionControllerForLaser(laser).nextSprite(state, laser);
 
                 renderObjectRelativeToMainPlayer(
                     graphics, sprite, state, mainPlayerSessionId, laser.getX(), laser.getY(),
@@ -126,7 +147,7 @@ public class GameWindowRenderer {
         });
 
         state.getBlackHoles().forEach(blackHole -> {
-            final BufferedImage sprite = getOrCreateAnimationControllerForBlackHole(blackHole).nextSprite(state, blackHole);
+            final BufferedImage sprite = getOrCreateStopMotionControllerForBlackHole(blackHole).nextSprite(state, blackHole);
 
             renderObjectRelativeToMainPlayer(
                 graphics, sprite, state, mainPlayerSessionId, blackHole.getX(), blackHole.getY(),
@@ -135,7 +156,7 @@ public class GameWindowRenderer {
         });
 
         state.getPortals().forEach(portal -> {
-            final BufferedImage sprite = getOrCreateAnimationControllerForPortal(portal).nextSprite(state, portal);
+            final BufferedImage sprite = getOrCreateStopMotionControllerForPortal(portal).nextSprite(state, portal);
 
             renderObjectRelativeToMainPlayer(
                 graphics, sprite, state, mainPlayerSessionId, portal.getX(), portal.getY(),
@@ -146,19 +167,10 @@ public class GameWindowRenderer {
         // Render players
         state.getPlayers().forEach(playerToRender -> {
             if (playerToRender == player) {
-                if (mainPlayerStopMotionController == null) {
-                    mainPlayerStopMotionController = new PlayerStopMotionController(playerToRender);
+                if (mainPlayerAnimationController == null) {
+                    mainPlayerAnimationController = new PlayerAnimationController(playerToRender, renderRatio);
                 }
-
-                final BufferedImage sprite = mainPlayerStopMotionController.nextSprite(state, playerToRender);
-
-                final AffineTransform transform = new AffineTransform();
-                transform.translate(width / 2, height / 2);
-                transform.rotate((playerToRender.getAngle() * -1) + Math.PI / 2);
-                transform.translate(-(renderRatio.getWidthScale() * (double) PLAYER_SIZE) / 2, -(renderRatio.getHeightScale() * (double) PLAYER_SIZE / 2));
-                transform.scale(renderRatio.getWidthScale(), renderRatio.getHeightScale());
-
-                ((Graphics2D)graphics).drawImage(sprite, transform, window);
+                mainPlayerAnimationController.renderNext(graphicsContext, state, player, width / 2, height / 2, player.getAngle() - (Math.PI / 2));
 
                 if (window.isAdvancedHudEnabled()) {
                     int hudY = height / 2 - player.getBoxHeight() / 2;
@@ -198,11 +210,10 @@ public class GameWindowRenderer {
                     }
                 }
             } else {
-                final BufferedImage sprite = getOrCreateAnimationControllerForPlayer(playerToRender).nextSprite(state, playerToRender);
-
-                renderObjectRelativeToMainPlayer(
-                    graphics, sprite, state, mainPlayerSessionId, playerToRender.getX(), playerToRender.getY(),
-                    PLAYER_SIZE, PLAYER_SIZE, playerToRender.getAngle(), playerX, playerY, null, null
+                final PlayerAnimationController controller = getOrCreatePlayerAnimationController(playerToRender);
+                renderAnimationRelativeToMainPlayer(
+                    graphicsContext, graphics, controller, playerToRender.getX(), playerToRender.getY(),
+                    playerToRender.getAngle(), state, playerToRender, player, null, null
                 );
 
                 final BufferedImage tracker = trackerSpriteSheet.getTrackerSpriteForColor(playerToRender.getColor());
@@ -226,7 +237,7 @@ public class GameWindowRenderer {
 
         // Render snakes
         state.getSnakes().forEach(snake -> {
-            final BufferedImage sprite = getOrCreateAnimationControllerForSnake(snake).nextSprite(state, snake);
+            final BufferedImage sprite = getOrCreateStopMotionControllerForSnake(snake).nextSprite(state, snake);
             renderObjectRelativeToMainPlayer(
                 graphics, sprite, state, mainPlayerSessionId, snake.getX(), snake.getY(), SNAKE_WIDTH, SNAKE_HEIGHT,
                 snake.getAngle(), playerX, playerY, snake.getId(), snake.moveableTag()
@@ -236,14 +247,14 @@ public class GameWindowRenderer {
         // Render asteroids
         state.getAsteroids().forEach(asteroid -> {
             if (asteroid.getSize() == 0) {
-                final BufferedImage sprite = getOrCreateAnimationControllerForSmallAsteroid(asteroid).nextSprite(state, asteroid);
+                final BufferedImage sprite = getOrCreateStopMotionControllerForSmallAsteroid(asteroid).nextSprite(state, asteroid);
 
                 renderObjectRelativeToMainPlayer(
                     graphics, sprite, state, mainPlayerSessionId, asteroid.getX(), asteroid.getY(),
                     SMALL_ASTEROID_SIZE, SMALL_ASTEROID_SIZE, asteroid.getAngle(), playerX, playerY, asteroid.getId(), asteroid.moveableTag()
                 );
             } else {
-                final BufferedImage sprite = getOrCreateAnimationControllerForLargeAsteroid(asteroid).nextSprite(state, asteroid);
+                final BufferedImage sprite = getOrCreateStopMotionControllerForLargeAsteroid(asteroid).nextSprite(state, asteroid);
 
                 renderObjectRelativeToMainPlayer(
                     graphics, sprite, state, mainPlayerSessionId, asteroid.getX(), asteroid.getY(),
@@ -255,7 +266,7 @@ public class GameWindowRenderer {
         // Render traveling lasers
         state.getLasers().forEach(laser -> {
             if (laser.getXVelocity() == 0 && laser.getYVelocity() == 0) {
-                final BufferedImage sprite = getOrCreateAnimationControllerForLaser(laser).nextSprite(state, laser);
+                final BufferedImage sprite = getOrCreateStopMotionControllerForLaser(laser).nextSprite(state, laser);
 
                 renderObjectRelativeToMainPlayer(
                     graphics, sprite, state, mainPlayerSessionId, laser.getX(), laser.getY(),
@@ -462,13 +473,60 @@ public class GameWindowRenderer {
 
         ((Graphics2D)graphics).drawImage(sprite, transform, window);
 
+        postRenderAdvancedHud(
+            graphics, x, y, angle,
+            drawingX, drawingY, renderWidth, renderHeight,
+            serverId, moveableTag, sessionId, state
+        );
+    }
+
+    private <ANIMATION_TYPE> void renderAnimationRelativeToMainPlayer(
+        GraphicsContext graphicsContext, Graphics graphics, AnimationController<GameState, ANIMATION_TYPE> controller,
+        long animationX, long animationY, double angle, GameState state, ANIMATION_TYPE animatedObject,
+        Player mainPlayer, Long serverId, String moveableTag
+    ) {
+        final int windowWidth = window.getWidth();
+        final int windowHeight = window.getHeight();
+
+        final long xDiff = animationX - mainPlayer.getX();
+        // No Y transform, because animation rig!
+        final long yDiff = animationY - mainPlayer.getY();
+
+        final int xOffset = (int)(renderRatio.getWidthScale() * (double) xDiff);
+        final int yOffset = (int)(renderRatio.getHeightScale() * (double) yDiff);
+
+        final int drawingX = windowWidth / 2 + xOffset;
+        final int drawingY = windowHeight / 2 + yOffset;
+
+        controller.renderNext(graphicsContext, state, animatedObject, drawingX, drawingY, angle - (Math.PI / 2));
+
+        if (getWindow().isAdvancedHudEnabled() || window.isCollisionWatch()) {
+            // final int renderWidth = (int) (renderRatio.getWidthScale() * (double) window.getWidth());
+            // final int renderHeight = (int) (renderRatio.getHeightScale() * (double) window.getHeight());
+
+            final int advancedHudDrawingX = windowWidth / 2 + xOffset;
+            final int advancedHudDrawingY = windowHeight / 2 - yOffset;
+            postRenderAdvancedHud(
+                graphics, animationX, animationY, angle,
+                // TODO 50-50 for width-height is hilariously wrong. Update Animation4J to allow for rig width/height inspection from controller
+                advancedHudDrawingX, advancedHudDrawingY, 50, 50,
+                serverId, moveableTag, mainPlayer.getSessionId(), state
+            );
+        }
+    }
+
+    private void postRenderAdvancedHud(
+        Graphics graphics, long literalX, long literalY, double angle,
+        int drawingX, int drawingY, int renderWidth, int renderHeight,
+        Long serverId, String moveableTag, String sessionId, GameState state
+    ) {
         if (window.isAdvancedHudEnabled()) {
             int hudY = drawingY;
             graphics.setColor(ADVANCED_HUD_TEXT_COLOR);
             graphics.setFont(ADVANCED_HUD_TEXT_FONT);
             graphics.drawString("ID: " + serverId, drawingX, hudY);
             hudY += 30;
-            graphics.drawString("(" + x + ", " + y + ")", drawingX, hudY);
+            graphics.drawString("(" + literalX + ", " + literalY + ")", drawingX, hudY);
             hudY += 30;
             String displayAngle = String.format("%.2f", Math.toDegrees(angle % (Math.PI * 2)));
             graphics.drawString("Angle: " + displayAngle, drawingX, hudY);
@@ -499,7 +557,7 @@ public class GameWindowRenderer {
      * @param snake The snake
      * @return The snake's animation controller, whether newly created or old
      */
-    private SnakeStopMotionController getOrCreateAnimationControllerForSnake(Snake snake) {
+    private SnakeStopMotionController getOrCreateStopMotionControllerForSnake(Snake snake) {
         return snakeStopMotionControllers
             .stream()
             .filter(controller -> controller.checkIfObjectIsRoot(snake))
@@ -517,14 +575,14 @@ public class GameWindowRenderer {
      * @param player The player
      * @return The player's animation controller, whether newly created or old
      */
-    private PlayerStopMotionController getOrCreateAnimationControllerForPlayer(Player player) {
-        return playerStopMotionControllers
+    private PlayerAnimationController getOrCreatePlayerAnimationController(Player player) {
+        return playerAnimationControllers
             .stream()
             .filter(controller -> controller.checkIfObjectIsRoot(player))
             .findFirst()
             .orElseGet(() -> {
-                final PlayerStopMotionController newController = new PlayerStopMotionController(player);
-                playerStopMotionControllers.add(newController);
+                final PlayerAnimationController newController = new PlayerAnimationController(player, renderRatio);
+                playerAnimationControllers.add(newController);
                 return newController;
             });
     }
@@ -535,14 +593,14 @@ public class GameWindowRenderer {
      * @param laser The laser
      * @return The laser's animation controller, whether newly created or old
      */
-    private LaserAnimationController getOrCreateAnimationControllerForLaser(Laser laser) {
-        return laserAnimationControllers
+    private LaserStopMotionController getOrCreateStopMotionControllerForLaser(Laser laser) {
+        return laserStopMotionControllers
             .stream()
             .filter(controller -> controller.checkIfObjectIsRoot(laser))
             .findFirst()
             .orElseGet(() -> {
-                final LaserAnimationController newController = new LaserAnimationController(laser);
-                laserAnimationControllers.add(newController);
+                final LaserStopMotionController newController = new LaserStopMotionController(laser);
+                laserStopMotionControllers.add(newController);
                 return newController;
             });
     }
@@ -553,7 +611,7 @@ public class GameWindowRenderer {
      * @param asteroid The asteroid
      * @return The asteroid's animation controller, whether newly created or old
      */
-    private SmallAsteroidStopMotionController getOrCreateAnimationControllerForSmallAsteroid(Asteroid asteroid) {
+    private SmallAsteroidStopMotionController getOrCreateStopMotionControllerForSmallAsteroid(Asteroid asteroid) {
         return smallAsteroidStopMotionControllers
             .stream()
             .filter(controller -> controller.checkIfObjectIsRoot(asteroid))
@@ -571,7 +629,7 @@ public class GameWindowRenderer {
      * @param asteroid The asteroid
      * @return The asteroid's animation controller, whether newly created or old
      */
-    private LargeAsteroidStopMotionController getOrCreateAnimationControllerForLargeAsteroid(Asteroid asteroid) {
+    private LargeAsteroidStopMotionController getOrCreateStopMotionControllerForLargeAsteroid(Asteroid asteroid) {
         return largeAsteroidStopMotionControllers
             .stream()
             .filter(controller -> controller.checkIfObjectIsRoot(asteroid))
@@ -589,7 +647,7 @@ public class GameWindowRenderer {
      * @param blackHole The black hole
      * @return The black hole's animation controller, whether newly created or old
      */
-    private MicroBlackHoleStopMotionController getOrCreateAnimationControllerForBlackHole(MicroBlackHole blackHole) {
+    private MicroBlackHoleStopMotionController getOrCreateStopMotionControllerForBlackHole(MicroBlackHole blackHole) {
         return blackHoleStopMotionControllers
             .stream()
             .filter(controller -> controller.checkIfObjectIsRoot(blackHole))
@@ -607,7 +665,7 @@ public class GameWindowRenderer {
      * @param portal The portal
      * @return The portal's animation controller, whether newly created or old
      */
-    private PortalStopMotionController getOrCreateAnimationControllerForPortal(Portal portal) {
+    private PortalStopMotionController getOrCreateStopMotionControllerForPortal(Portal portal) {
         return portalStopMotionControllers
             .stream()
             .filter(controller -> controller.checkIfObjectIsRoot(portal))
