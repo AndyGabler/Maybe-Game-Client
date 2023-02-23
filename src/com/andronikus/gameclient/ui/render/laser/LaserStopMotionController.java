@@ -43,9 +43,13 @@ public class LaserStopMotionController extends StopMotionController<GameState, L
         final StopMotionState<GameState, Laser, LaserSpriteSheet> hitState =
             travelingState.createTransitionState(((gameState, laser) -> !laser.isActive()));
         hitState
-            .addFrame((long) 3, LaserSpriteSheet::getHitSprite)
-            .addFrame((long) 2, LaserSpriteSheet::getHitSprite)
-            .addFrame((long) 2, LaserSpriteSheet::getHitSprite)
+            .addFrame(1L, LaserSpriteSheet::getHitSprite)
+            .addFrame(2L, LaserSpriteSheet::getHitSprite)
+            .addFrame(2L, LaserSpriteSheet::getHitSprite)
+            .addFrame(2L, LaserSpriteSheet::getHitSprite)
+            .addFrame(2L, LaserSpriteSheet::getHitSprite)
+            .addFrame(3L, LaserSpriteSheet::getHitSprite)
+            .addFrame(3L, LaserSpriteSheet::getHitSprite)
             .addFrame(null, LaserSpriteSheet::getHitSprite);
 
         return travelingState;
