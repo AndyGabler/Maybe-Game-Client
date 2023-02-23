@@ -13,7 +13,7 @@ import java.util.List;
 public class PlayerRig extends AnimationRig<GameState, Player> {
 
     public static final int TURRET_SIZE = 26;
-    private static final short TURRET_LIMB_ID = 1;
+    public static final short TURRET_LIMB_ID = 1;
 
     private final String sessionId;
     private RenderRatio renderRatio;

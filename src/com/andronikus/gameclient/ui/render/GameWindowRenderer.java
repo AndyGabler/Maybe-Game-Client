@@ -158,6 +158,7 @@ public class GameWindowRenderer {
                 if (mainPlayerAnimationController == null) {
                     mainPlayerAnimationController = new PlayerAnimationController(playerToRender, renderRatio);
                 }
+                mainPlayerAnimationController.setTurretAngle(playerToRender.getLaserShotAngle(), playerToRender.getAngle());
                 mainPlayerAnimationController.renderNext(graphicsContext, state, player, width / 2, height / 2, player.getAngle() - (Math.PI / 2));
 
                 if (window.isAdvancedHudEnabled()) {
@@ -199,6 +200,7 @@ public class GameWindowRenderer {
                 }
             } else {
                 final PlayerAnimationController controller = getOrCreatePlayerAnimationController(playerToRender);
+                controller.setTurretAngle(playerToRender.getLaserShotAngle(), playerToRender.getAngle());
                 renderAnimationRelativeToMainPlayer(
                     graphicsContext, graphics, controller, playerToRender.getX(), playerToRender.getY(),
                     playerToRender.getAngle(), state, playerToRender, player, null, null

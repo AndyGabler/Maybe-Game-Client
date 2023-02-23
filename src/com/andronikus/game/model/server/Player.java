@@ -41,6 +41,7 @@ public class Player implements IMoveable {
     private int laserCharges;
     private int laserRecharge;
     private long laserShotTime;
+    private Double laserShotAngle;
 
     private PlayerColor color;
 
