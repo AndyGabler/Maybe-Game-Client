@@ -134,18 +134,6 @@ public class GameWindowRenderer {
         // Draw the background
         backgroundRenderer.render(graphics, player, (BoundingBoxBorder) state.getBorder(), this);
 
-        // Render lasers that hit something
-        state.getLasers().forEach(laser -> {
-            if (laser.getXVelocity() != 0 || laser.getYVelocity() != 0) {
-                final BufferedImage sprite = getOrCreateStopMotionControllerForLaser(laser).nextSprite(state, laser);
-
-                renderObjectRelativeToMainPlayer(
-                    graphics, sprite, state, mainPlayerSessionId, laser.getX(), laser.getY(),
-                    LASER_WIDTH, LASER_HEIGHT, laser.getAngle(), playerX, playerY, laser.getId(), laser.moveableTag()
-                );
-            }
-        });
-
         state.getBlackHoles().forEach(blackHole -> {
             final BufferedImage sprite = getOrCreateStopMotionControllerForBlackHole(blackHole).nextSprite(state, blackHole);
 
@@ -263,7 +251,19 @@ public class GameWindowRenderer {
             }
         });
 
-        // Render traveling lasers
+        // Render lasers that are moving
+        state.getLasers().forEach(laser -> {
+            if (laser.getXVelocity() != 0 || laser.getYVelocity() != 0) {
+                final BufferedImage sprite = getOrCreateStopMotionControllerForLaser(laser).nextSprite(state, laser);
+
+                renderObjectRelativeToMainPlayer(
+                    graphics, sprite, state, mainPlayerSessionId, laser.getX(), laser.getY(),
+                    LASER_WIDTH, LASER_HEIGHT, laser.getAngle(), playerX, playerY, laser.getId(), laser.moveableTag()
+                );
+            }
+        });
+
+        // Render lasers that hit something
         state.getLasers().forEach(laser -> {
             if (laser.getXVelocity() == 0 && laser.getYVelocity() == 0) {
                 final BufferedImage sprite = getOrCreateStopMotionControllerForLaser(laser).nextSprite(state, laser);

@@ -12,6 +12,9 @@ import java.util.List;
 
 public class PlayerRig extends AnimationRig<GameState, Player> {
 
+    public static final int TURRET_SIZE = 26;
+    private static final short TURRET_LIMB_ID = 1;
+
     private final String sessionId;
     private RenderRatio renderRatio;
 
@@ -33,6 +36,14 @@ public class PlayerRig extends AnimationRig<GameState, Player> {
             .setWidth(scaleWidth(GameWindowRenderer.PLAYER_SIZE))
             .setHeight(scaleHeight(GameWindowRenderer.PLAYER_SIZE))
             .setStopMotionController(new PlayerStopMotionController(player))
+            .finishRigging();
+
+        // Turret joint
+        shipLimb.registerJoint(TURRET_LIMB_ID, Math.PI * 3 / 2, 10, false)
+            .getLimb()
+            .setWidth(scaleWidth(TURRET_SIZE))
+            .setHeight(scaleHeight(TURRET_SIZE))
+            .setStopMotionController(new PlayerTurretStopMotionController(player))
             .finishRigging();
 
         return Collections.singletonList(shipLimb);
