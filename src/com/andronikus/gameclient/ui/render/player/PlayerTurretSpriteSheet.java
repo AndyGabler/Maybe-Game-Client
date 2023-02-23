@@ -17,4 +17,8 @@ public class PlayerTurretSpriteSheet extends SpriteSheet {
     public BufferedImage getBlastingSprite(int animationState) {
         return getTile(1, animationState);
     }
+
+    public BufferedImage getDeadSprite() {
+        return getTile(2, 0);
+    }
 }

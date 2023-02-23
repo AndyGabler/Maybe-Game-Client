@@ -42,7 +42,14 @@ public class PlayerTurretStopMotionController extends StopMotionController<GameS
             .addFrame(3L, PlayerTurretSpriteSheet::getBlastingSprite)
             .addFrame(3L, PlayerTurretSpriteSheet::getBlastingSprite)
             .addFrame(2L, PlayerTurretSpriteSheet::getBlastingSprite)
-            .addFrame(2L, PlayerTurretSpriteSheet::getBlastingSprite);
+            .addFrame(null, PlayerTurretSpriteSheet::getBlastingSprite);
+
+        final StopMotionState<GameState, Player, PlayerTurretSpriteSheet> deadState = idleState
+            .createTransitionState((gameState, player) -> player.isDead())
+            .addFrame(3L, (sheet, animationState) -> sheet.getDeadSprite())
+            .addFrame(null, (sheet, animationState) -> sheet.getDeadSprite());
+
+        deadState.createTransition((gameState, player) -> !player.isDead(), idleState);
 
         return idleState;
     }
