@@ -287,7 +287,8 @@ public class GameWindowRenderer {
 
         hudRenderer.drawHud(
             graphics, player.getHealth(), player.getShieldCount(), player.getShieldRecharge(),
-            player.getBoostingCharge(), player.getBoostingRecharge(), player.getLaserCharges(), window
+            player.getBoostingCharge(), player.getBoostingRecharge(), player.getTurretHeat(),
+            player.getTurretCoolDown(), window
         );
 
         if (window.isCommandMode()) {

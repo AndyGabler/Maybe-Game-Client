@@ -44,12 +44,13 @@ public class HudRenderer {
      * @param shieldRecharge Shield recharge
      * @param boostCharge Boost charge
      * @param boostRecharge Boost recharge
-     * @param laserCharge Laser charge
+     * @param turretHeat Turret heat
+     * @param turretCoolDown Turret cooldown
      * @param observer HUD Observer
      */
     public void drawHud(
         Graphics graphics, int health, int shieldCount, int shieldRecharge,
-        int boostCharge, int boostRecharge, int laserCharge, GameWindow observer
+        int boostCharge, int boostRecharge, int turretHeat, int turretCoolDown, GameWindow observer
     ) {
         // Draw the health bar
         if (health < 0) {
@@ -99,13 +100,14 @@ public class HudRenderer {
         graphics.drawLine(HUD_OFFSET, HUD_OFFSET + (HUD_SECTION_OFFSET * 3) + 29, HUD_OFFSET + HUD_WIDTH, HUD_OFFSET + (HUD_SECTION_OFFSET * 3) + 29);
 
         final int laserChargeY = HUD_OFFSET + (HUD_SECTION_OFFSET * 3) + 18;
+        graphics.setColor(new Color(71, 187, 42));
         int laserChargeX = HUD_OFFSET + 3;
-
-        while (laserCharge > 0) {
+        ((Graphics2D) graphics).drawString("Heat: " + turretHeat + ", CD: " + turretCoolDown, laserChargeX, laserChargeY);
+        /*while (laserCharge > 0) {
             laserCharge--;
             graphics.drawImage(laserChargeImage, laserChargeX, laserChargeY, 20, 6, observer);
             laserChargeX += 18;
-        }
+        }*/
     }
 
     /**

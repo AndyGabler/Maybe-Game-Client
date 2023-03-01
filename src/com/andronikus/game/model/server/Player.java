@@ -38,8 +38,8 @@ public class Player implements IMoveable {
     private int shieldRecharge;
     private boolean shieldLostThisTick;
 
-    private int laserCharges;
-    private int laserRecharge;
+    private int turretHeat;
+    private int turretCoolDown;
     private long laserShotTime;
     private Double laserShotAngle;
 
