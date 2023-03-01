@@ -255,7 +255,7 @@ public class GameWindowRenderer {
 
         // Render lasers that are moving
         state.getLasers().forEach(laser -> {
-            if (laser.isActive()) {
+            if (laser.getDeactivatedTime() == null) {
                 final BufferedImage sprite = getOrCreateStopMotionControllerForLaser(laser).nextSprite(state, laser);
 
                 renderObjectRelativeToMainPlayer(
@@ -267,7 +267,7 @@ public class GameWindowRenderer {
 
         // Render lasers that hit something
         state.getLasers().forEach(laser -> {
-            if (!laser.isActive()) {
+            if (laser.getDeactivatedTime() != null) {
                 final BufferedImage sprite = getOrCreateStopMotionControllerForLaser(laser).nextSprite(state, laser);
 
                 renderObjectRelativeToMainPlayer(
