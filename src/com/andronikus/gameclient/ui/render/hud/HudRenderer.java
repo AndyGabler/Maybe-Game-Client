@@ -1,7 +1,6 @@
 package com.andronikus.gameclient.ui.render.hud;
 
 import com.andronikus.gameclient.ui.GameWindow;
-import com.andronikus.gameclient.ui.ImagesUtil;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -26,13 +25,12 @@ public class HudRenderer {
     private static final double SHIELD_RECHARGE_CAP = 1000;
     private static final int MAX_SHIELD_COUNT = 4;
     private static final double BOOSTING_RECHARGE_CAP = 200.0;
+    private static final double PLAYER_LASER_MAX_HEAT = 1000.0;
 
-    private final BufferedImage laserChargeImage;
     private final ShieldSpriteSheet shieldSpriteSheet;
 
     public HudRenderer() {
         shieldSpriteSheet = new ShieldSpriteSheet();
-        laserChargeImage = ImagesUtil.getImage("hud/LaserChargeIcon.png");
     }
 
     /**
@@ -95,19 +93,26 @@ public class HudRenderer {
         graphics.fillRect(HUD_OFFSET + 4, HUD_OFFSET + (HUD_SECTION_OFFSET * 2) + 24, (int)boostChargeLength, 36);
 
         // Draw a laser counter
+        final int laserChargeX = HUD_OFFSET + 3;
+        final int laserHeatWidth = HUD_WIDTH - 3;
+        final int maxLaserChargeX = laserChargeX + laserHeatWidth;
+        final int laserChargeY = HUD_OFFSET + (HUD_SECTION_OFFSET * 3) + 5;
+
+        if (turretCoolDown == 0) {
+            graphics.setColor(new Color(238, 117, 117));
+            graphics.fillRect(laserChargeX, laserChargeY, (int) ((double) laserHeatWidth * ((double) turretHeat / PLAYER_LASER_MAX_HEAT)), 20);
+        } else {
+            graphics.setColor(new Color(215, 0, 0));
+            graphics.fillRect(laserChargeX, laserChargeY, laserHeatWidth, 20);
+            graphics.setColor(new Color(43, 159, 208));
+            graphics.fillRect(laserChargeX, laserChargeY, (int) ((double) laserHeatWidth * ((double) turretCoolDown / PLAYER_LASER_MAX_HEAT)), 20);
+        }
+
         graphics.setColor(Color.LIGHT_GRAY);
         graphics.drawLine(HUD_OFFSET, HUD_OFFSET + (HUD_SECTION_OFFSET * 3), HUD_OFFSET, HUD_OFFSET + (HUD_SECTION_OFFSET * 3) + 29);
         graphics.drawLine(HUD_OFFSET, HUD_OFFSET + (HUD_SECTION_OFFSET * 3) + 29, HUD_OFFSET + HUD_WIDTH, HUD_OFFSET + (HUD_SECTION_OFFSET * 3) + 29);
-
-        final int laserChargeY = HUD_OFFSET + (HUD_SECTION_OFFSET * 3) + 18;
-        graphics.setColor(new Color(71, 187, 42));
-        int laserChargeX = HUD_OFFSET + 3;
-        ((Graphics2D) graphics).drawString("Heat: " + turretHeat + ", CD: " + turretCoolDown, laserChargeX, laserChargeY);
-        /*while (laserCharge > 0) {
-            laserCharge--;
-            graphics.drawImage(laserChargeImage, laserChargeX, laserChargeY, 20, 6, observer);
-            laserChargeX += 18;
-        }*/
+        graphics.setColor(new Color(255, 25, 25));
+        graphics.drawLine(maxLaserChargeX, HUD_OFFSET + (HUD_SECTION_OFFSET * 3) + 7, maxLaserChargeX, HUD_OFFSET + (HUD_SECTION_OFFSET * 3) + 26);
     }
 
     /**
