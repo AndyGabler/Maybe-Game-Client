@@ -26,13 +26,13 @@ public class StaticKeyboardInputMapper implements IKeyBoardInputMapper {
             case RELEASED:
                 switch (keyCode) {
                     case KeyEvent.VK_Q:
-                        input = new ServerInput("BOOSTEND", true);
+                        input = new ServerInput("BOOSTEND");
                         break;
                     case KeyEvent.VK_SPACE:
                         input = new ServerInput("SHOOT");
                         break;
                     case KeyEvent.VK_W:
-                        input = new ServerInput("THRUSTEND", true);
+                        input = new ServerInput("THRUSTEND");
                         break;
                     case KeyEvent.VK_ENTER:
                         input = new ClientInput(ClientInputType.COMMAND_WINDOW_TOGGLE);
@@ -52,16 +52,8 @@ public class StaticKeyboardInputMapper implements IKeyBoardInputMapper {
                     case KeyEvent.VK_Q:
                         input = new ServerInput("BOOST");
                         break;
-                    case KeyEvent.VK_SHIFT:
-                        if (location == KeyboardPressLocation.LEFT) {
-                            input = new ServerInput("BREAK");
-                        }
-                        break;
                     case KeyEvent.VK_W:
                         input = new ServerInput("THRUST");
-                        break;
-                    case KeyEvent.VK_S:
-                        input = new ServerInput("RTHRUST");
                         break;
                     case KeyEvent.VK_A:
                         input = new ServerInput("LROTATE");

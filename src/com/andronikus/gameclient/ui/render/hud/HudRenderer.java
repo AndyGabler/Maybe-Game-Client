@@ -24,7 +24,7 @@ public class HudRenderer {
     private static final int PLAYER_MAX_HEALTH = 100;
     private static final double SHIELD_RECHARGE_CAP = 1000;
     private static final int MAX_SHIELD_COUNT = 4;
-    private static final double BOOSTING_RECHARGE_CAP = 200.0;
+    private static final double BOOSTING_RECHARGE_CAP = 263.0;
     private static final double PLAYER_LASER_MAX_HEAT = 1000.0;
 
     private final ShieldSpriteSheet shieldSpriteSheet;

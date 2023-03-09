@@ -22,7 +22,7 @@ public class Player implements IMoveable {
     private long externalYAcceleration;
 
     private long speed = 0;
-    private long acceleration = 0;
+    private boolean thrusting;
 
     private boolean boosting = false;
     private int boostingCharge;
@@ -44,8 +44,6 @@ public class Player implements IMoveable {
     private Double laserShotAngle;
 
     private PlayerColor color;
-
-    private boolean thrusting;
 
     private int venom;
 

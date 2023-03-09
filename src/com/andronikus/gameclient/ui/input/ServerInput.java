@@ -60,6 +60,12 @@ public class ServerInput implements IUserInput {
         directAckRequired = aRequiresAck;
     }
 
+    /**
+     * Scanner for acknowledgement from the server.
+     *
+     * @param scannerNeeded If a scanner is needed
+     * @return Scanner if necessary
+     */
     private static BiFunction<GameState, ServerInput, Boolean> serverAcknowledgementScanner(boolean scannerNeeded) {
         if (!scannerNeeded) {
             return null;
