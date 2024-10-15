@@ -36,7 +36,7 @@ public class PlayerTurretStopMotionController extends StopMotionController<GameS
             .createTransitionState((gameState, player) -> player.getLaserShotTime() + 1 == gameState.getVersion()); // TODO not a huge fan we're relying on game state being a few ticks behind
         blastingState.createTransition((gameState, player) -> true, idleState);
 
-        blastingState.withInterruptableFlag(false)
+        blastingState.withInterruptibleFlag(false)
             .addFrame(2L, PlayerTurretSpriteSheet::getBlastingSprite)
             .addFrame(3L, PlayerTurretSpriteSheet::getBlastingSprite)
             .addFrame(3L, PlayerTurretSpriteSheet::getBlastingSprite)

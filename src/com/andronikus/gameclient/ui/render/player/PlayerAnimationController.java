@@ -17,7 +17,7 @@ public class PlayerAnimationController extends AnimationController<GameState, Pl
     @Override
     protected Animation<GameState, Player> buildInitialStatesAndTransitions() {
         final Animation<GameState, Player> idleAnimation = createAnimation()
-            .withInterruptableFlag(true);
+            .withInterruptibleFlag(true);
 
         return idleAnimation.finishAnimating();
     }

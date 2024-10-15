@@ -110,7 +110,6 @@ public class GameWindowRenderer {
 
         final GraphicsContext graphicsContext = new GraphicsContext();
         graphicsContext.setGraphics2d((Graphics2D) graphics);
-        graphicsContext.setComponentHeight(height);
         graphicsContext.setObserver(window);
 
         // Precompute some variables like current player to reduce operation time for complex operations
